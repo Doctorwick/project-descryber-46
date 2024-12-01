@@ -1,24 +1,11 @@
 import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { motion } from "framer-motion";
-import { Play, Pause, StopCircle, AlertTriangle } from "lucide-react";
-import { analyzeMessage, FilterResult } from "@/utils/messageFilter";
-
-interface Message {
-  id: number;
-  text: string;
-  sender: "user" | "bot";
-  isHidden?: boolean;
-  timestamp: string;
-  filterResult?: FilterResult;
-}
-
-// Shared state between components using a simple event system
-const messageHistory: Message[] = [];
-const subscribers = new Set<() => void>();
+import { MessageList } from "@/components/simulation/MessageList";
+import { MessageInput } from "@/components/simulation/MessageInput";
+import { SimulationControls } from "@/components/simulation/SimulationControls";
+import { analyzeMessage } from "@/utils/messageFilter";
+import { Message } from "@/types/message";
 
 export const addToHistory = (message: Message) => {
   messageHistory.push(message);
@@ -31,6 +18,10 @@ export const subscribeToHistory = (callback: () => void) => {
   subscribers.add(callback);
   return () => subscribers.delete(callback);
 };
+
+// Shared state between components
+const messageHistory: Message[] = [];
+const subscribers = new Set<() => void>();
 
 export default function Simulation() {
   const [messages, setMessages] = useState<Message[]>([
@@ -128,80 +119,21 @@ export default function Simulation() {
           <div className="bg-white rounded-lg shadow-lg p-4">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
               <h1 className="text-2xl font-bold text-center">Message Filter Demo</h1>
-              <div className="flex gap-2">
-                {!isActive ? (
-                  <Button 
-                    onClick={handleStart}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Start
-                  </Button>
-                ) : (
-                  <>
-                    <Button 
-                      onClick={handlePause}
-                      className={`${isPaused ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-                    >
-                      <Pause className="w-4 h-4 mr-2" />
-                      {isPaused ? 'Resume' : 'Pause'}
-                    </Button>
-                    <Button 
-                      onClick={handleStop}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      <StopCircle className="w-4 h-4 mr-2" />
-                      Stop
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="space-y-4 h-[400px] overflow-y-auto mb-4 p-2 bg-gray-50 rounded-lg">
-              {messages.map(message => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`max-w-[80%] p-3 rounded-lg ${
-                      message.sender === "user"
-                        ? "bg-purple-600 text-white"
-                        : "bg-gray-200 text-gray-800"
-                    }`}
-                  >
-                    {message.isHidden ? (
-                      <div className="flex items-center gap-2 text-gray-300">
-                        <AlertTriangle className="w-4 h-4" />
-                        <span className="italic">Message hidden due to harmful content</span>
-                      </div>
-                    ) : (
-                      message.text
-                    )}
-                  </motion.div>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                placeholder={isActive ? (isPaused ? "Simulation is paused..." : "Type a message...") : "Start simulation to begin..."}
-                className="flex-1"
-                disabled={!isActive || isPaused}
+              <SimulationControls
+                isActive={isActive}
+                isPaused={isPaused}
+                onStart={handleStart}
+                onPause={handlePause}
+                onStop={handleStop}
               />
-              <Button 
-                onClick={handleSend} 
-                className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
-                disabled={!isActive || isPaused}
-              >
-                Send
-              </Button>
             </div>
+            <MessageList messages={messages} />
+            <MessageInput
+              input={input}
+              setInput={setInput}
+              handleSend={handleSend}
+              isDisabled={!isActive || isPaused}
+            />
           </div>
         </div>
       </div>

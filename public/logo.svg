@@ -4,15 +4,16 @@
       <stop offset="0%" style="stop-color:#9b87f5"/>
       <stop offset="100%" style="stop-color:#7E69AB"/>
     </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
   </defs>
   <path d="M50 5 L90 20 V45 C90 65 73 83 50 95 C27 83 10 65 10 45 V20 L50 5Z" 
         fill="url(#shieldGradient)" 
         stroke="#6E59A5" 
-        stroke-width="2"/>
-  <text x="50" y="60" 
-        font-family="Arial, sans-serif" 
-        font-size="35" 
+        stroke-width="2"
+        filter="url(#shadow)"/>
+  <path d="M40 40 L60 40 L60 60 L40 60 Z" 
         fill="white" 
-        text-anchor="middle" 
-        font-weight="bold">D</text>
+        transform="rotate(45, 50, 50)"/>
 </svg>
