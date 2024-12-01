@@ -1,20 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { Shield, MessageSquare, Users, Database, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Navbar } from "@/components/Navbar";
 
 export default function Index() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      <Navbar />
+      
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
+        <div className="flex justify-center mb-8">
+          <img src="/logo.png" alt="Descryber Logo" className="h-20 w-auto animate-float" />
+        </div>
         <h1 className="mb-6 text-5xl font-bold text-gray-900 animate-fade-in">
           Welcome to <span className="text-purple-600">Descryber</span>
         </h1>
         <p className="mb-8 text-xl text-gray-600 max-w-2xl mx-auto">
           Your trusted guardian against cyberbullying, providing safety and support across social media platforms.
         </p>
-        <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all">
-          Get Started
-        </Button>
+        <Link to="/simulation">
+          <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all">
+            Try Demo
+          </Button>
+        </Link>
       </section>
 
       {/* Features Section */}
@@ -61,15 +70,12 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Call to Action */}
+      {/* Availability Section */}
       <section className="container mx-auto px-4 py-20 text-center">
-        <h2 className="text-3xl font-bold mb-6 text-gray-900">Ready to Feel Safer Online?</h2>
+        <h2 className="text-3xl font-bold mb-6 text-gray-900">Coming Soon</h2>
         <p className="mb-8 text-xl text-gray-600 max-w-2xl mx-auto">
-          Join thousands of young people who are already using Descryber to create a safer online experience.
+          Descryber will be available on both mobile and desktop platforms, providing comprehensive protection wherever you are.
         </p>
-        <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all">
-          Install Descryber Now
-        </Button>
       </section>
     </div>
   );
