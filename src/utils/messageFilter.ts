@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { toast } from '@/components/ui/use-toast';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -8,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 try {
-  new URL(supabaseUrl); // Validate URL format
+  new URL(supabaseUrl);
 } catch (e) {
   throw new Error('Invalid Supabase URL. Please check your .env file and ensure the URL is correct.');
 }
@@ -41,7 +42,6 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   let totalMatches = 0;
   let maxConfidence = 0;
 
-  // Check against regex patterns
   Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
     const matchCount = (text.match(pattern) || []).length;
     if (matchCount > 0) {
@@ -51,19 +51,31 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
     }
   });
 
-  // Store harmful messages in Supabase
   if (matches.length > 0) {
-    await supabase
-      .from('harmful_messages')
-      .insert([
-        {
-          text,
-          categories: matches,
-          severity: calculateSeverity(totalMatches, maxConfidence),
-          confidence: maxConfidence,
-          timestamp: new Date().toISOString()
-        }
-      ]);
+    try {
+      const { error: harmfulError } = await supabase
+        .from('harmful_messages')
+        .insert([
+          {
+            text,
+            categories: matches,
+            severity: calculateSeverity(totalMatches, maxConfidence),
+            confidence: maxConfidence,
+            timestamp: new Date().toISOString()
+          }
+        ]);
+
+      if (harmfulError) {
+        console.error('Error storing harmful message:', harmfulError);
+        toast({
+          variant: "destructive",
+          title: "Database Error",
+          description: "Failed to store message in history. The database table might not exist.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to store harmful message:', error);
+    }
   }
 
   return {

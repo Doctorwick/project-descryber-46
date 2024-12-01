@@ -41,17 +41,22 @@ const notifyHistorySubscribers = () => {
 };
 
 export const getMessageHistory = async () => {
-  const { data, error } = await supabase
-    .from('message_history')
-    .select('*')
-    .order('timestamp', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('message_history')
+      .select('*')
+      .order('timestamp', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching message history:', error);
+      return [];
+    }
     
-  if (error) {
-    console.error('Error fetching message history:', error);
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch message history:', error);
     return [];
   }
-  
-  return data || [];
 };
 
 export default function Simulation() {
@@ -173,3 +178,4 @@ export default function Simulation() {
     </div>
   );
 }
+
