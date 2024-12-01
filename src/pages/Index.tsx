@@ -10,9 +10,6 @@ export default function Index() {
       
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
-        <div className="flex justify-center mb-8">
-          <img src="/logo.png" alt="Descryber Logo" className="h-20 w-auto animate-float" />
-        </div>
         <h1 className="mb-6 text-5xl font-bold text-gray-900 animate-fade-in">
           Welcome to <span className="text-purple-600">Descryber</span>
         </h1>
