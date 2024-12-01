@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Shield, MessageSquare, Users, Database, Override } from "lucide-react";
+import { Shield, MessageSquare, Users, Database, Settings } from "lucide-react";
 
 export default function Index() {
   return (
@@ -42,7 +42,7 @@ export default function Index() {
             description="Safely store evidence of harassment that can't be deleted by others, giving you peace of mind."
           />
           <FeatureCard
-            icon={<Override className="w-8 h-8 text-purple-600" />}
+            icon={<Settings className="w-8 h-8 text-purple-600" />}
             title="User Control"
             description="Stay in control with smart override options while maintaining your safety."
           />
