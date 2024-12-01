@@ -1,13 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables');
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+try {
+  new URL(supabaseUrl); // Validate URL format
+} catch (e) {
+  throw new Error('Invalid Supabase URL. Please check your .env file and ensure the URL is correct.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface FilterResult {
   isHarmful: boolean;
