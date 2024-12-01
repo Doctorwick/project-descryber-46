@@ -42,9 +42,10 @@ const notifyHistorySubscribers = () => {
 
 export const getMessageHistory = async () => {
   try {
+    console.log('Fetching message history...');
     const { data, error } = await supabase
       .from('message_history')
-      .select('*')
+      .select('id, text, sender, is_hidden, timestamp, filter_result')
       .order('timestamp', { ascending: false });
       
     if (error) {
@@ -52,7 +53,18 @@ export const getMessageHistory = async () => {
       return [];
     }
     
-    return data || [];
+    // Transform the snake_case response to camelCase for frontend use
+    const transformedData = data?.map(message => ({
+      id: message.id,
+      text: message.text,
+      sender: message.sender,
+      isHidden: message.is_hidden,
+      timestamp: message.timestamp,
+      filterResult: message.filter_result
+    })) || [];
+
+    console.log('Fetched message history:', transformedData);
+    return transformedData;
   } catch (error) {
     console.error('Failed to fetch message history:', error);
     return [];
@@ -178,4 +190,3 @@ export default function Simulation() {
     </div>
   );
 }
-
