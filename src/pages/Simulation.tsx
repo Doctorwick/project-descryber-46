@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
-import { Play, Pause, StopCircle } from "lucide-react";
+import { Play, Pause, StopCircle, AlertTriangle } from "lucide-react";
+import { analyzeMessage, FilterResult } from "@/utils/messageFilter";
 
 interface Message {
   id: number;
@@ -12,6 +13,7 @@ interface Message {
   sender: "user" | "bot";
   isHidden?: boolean;
   timestamp: string;
+  filterResult?: FilterResult;
 }
 
 // Shared state between components using a simple event system
@@ -44,31 +46,30 @@ export default function Simulation() {
   const [isPaused, setIsPaused] = useState(false);
   const { toast } = useToast();
 
-  const filterMessage = (text: string) => {
-    const harmfulWords = ["die", "kill", "hate", "stupid", "ugly"];
-    return harmfulWords.some(word => text.toLowerCase().includes(word));
-  };
-
   const handleSend = () => {
     if (!input.trim() || !isActive || isPaused) return;
 
-    const isHarmful = filterMessage(input);
+    const filterResult = analyzeMessage(input);
     const newMessage: Message = {
       id: Date.now(),
       text: input,
       sender: "user",
-      isHidden: isHarmful,
-      timestamp: new Date().toISOString()
+      isHidden: filterResult.isHarmful,
+      timestamp: new Date().toISOString(),
+      filterResult
     };
 
     setMessages(prev => [...prev, newMessage]);
     setInput("");
 
-    if (isHarmful) {
+    if (filterResult.isHarmful) {
       addToHistory(newMessage);
+      
+      const description = `Message contained ${filterResult.categories.join(", ")} content with ${filterResult.severity} severity.`;
+      
       toast({
         title: "Message Hidden",
-        description: "This message was flagged as potentially harmful and has been hidden.",
+        description,
         variant: "destructive"
       });
     }
@@ -77,8 +78,8 @@ export default function Simulation() {
     setTimeout(() => {
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: isHarmful 
-          ? "I noticed that message might be harmful. Remember, kind words make the internet a better place! 😊"
+        text: filterResult.isHarmful 
+          ? `I noticed that message might contain ${filterResult.categories.join(" and ")}. Remember, kind words make the internet a better place! 😊`
           : "Thanks for the message! Keep testing our filter system. 👍",
         sender: "bot",
         timestamp: new Date().toISOString()
@@ -124,8 +125,8 @@ export default function Simulation() {
       <Navbar />
       <div className="container mx-auto px-4 pt-20">
         <div className="max-w-2xl mx-auto mt-8">
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <div className="flex justify-between items-center mb-6">
+          <div className="bg-white rounded-lg shadow-lg p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
               <h1 className="text-2xl font-bold text-center">Message Filter Demo</h1>
               <div className="flex gap-2">
                 {!isActive ? (
@@ -156,7 +157,7 @@ export default function Simulation() {
                 )}
               </div>
             </div>
-            <div className="space-y-4 h-[400px] overflow-y-auto mb-4 p-2 sm:p-4 bg-gray-50 rounded-lg">
+            <div className="space-y-4 h-[400px] overflow-y-auto mb-4 p-2 bg-gray-50 rounded-lg">
               {messages.map(message => (
                 <div
                   key={message.id}
@@ -173,7 +174,10 @@ export default function Simulation() {
                     }`}
                   >
                     {message.isHidden ? (
-                      <span className="italic text-gray-300">Message hidden due to harmful content</span>
+                      <div className="flex items-center gap-2 text-gray-300">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span className="italic">Message hidden due to harmful content</span>
+                      </div>
                     ) : (
                       message.text
                     )}
