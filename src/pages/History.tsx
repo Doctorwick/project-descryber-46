@@ -9,40 +9,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getMessageHistory, subscribeToHistory } from "./Simulation";
-
-interface HistoryEntry {
-  id: number;
-  timestamp: string;
-  text: string;
-  isHidden: boolean;
-}
+import { Message } from "@/types/message";
 
 export default function History() {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<Message[]>([]);
 
   useEffect(() => {
-    // Convert Message[] to HistoryEntry[] when setting initial state
-    const messages = getMessageHistory().map(msg => ({
-      id: msg.id,
-      timestamp: msg.timestamp,
-      text: msg.text,
-      isHidden: msg.isHidden || false // Ensure isHidden is always boolean
-    }));
+    const fetchHistory = async () => {
+      const messages = await getMessageHistory();
+      setHistory(messages);
+    };
+
+    fetchHistory();
     
-    setHistory(messages);
-    
-    // Subscribe to updates
+    // Subscribe to history updates
     const unsubscribe = subscribeToHistory(() => {
-      const updatedMessages = getMessageHistory().map(msg => ({
-        id: msg.id,
-        timestamp: msg.timestamp,
-        text: msg.text,
-        isHidden: msg.isHidden || false
-      }));
-      setHistory(updatedMessages);
+      fetchHistory();
     });
 
-    // Return cleanup function
     return () => {
       unsubscribe();
     };

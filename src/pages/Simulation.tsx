@@ -13,17 +13,34 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-export const addToHistory = async (message: Message) => {
-  await supabase
-    .from('message_history')
-    .insert([message]);
+// Create a subscribers array to handle history updates
+const historySubscribers: (() => void)[] = [];
+
+export const subscribeToHistory = (callback: () => void) => {
+  historySubscribers.push(callback);
+  return () => {
+    const index = historySubscribers.indexOf(callback);
+    if (index > -1) {
+      historySubscribers.splice(index, 1);
+    }
+  };
+};
+
+const notifyHistorySubscribers = () => {
+  historySubscribers.forEach(callback => callback());
 };
 
 export const getMessageHistory = async () => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('message_history')
     .select('*')
     .order('timestamp', { ascending: false });
+    
+  if (error) {
+    console.error('Error fetching message history:', error);
+    return [];
+  }
+  
   return data || [];
 };
 
@@ -58,7 +75,11 @@ export default function Simulation() {
     setInput("");
 
     if (filterResult.isHarmful) {
-      await addToHistory(newMessage);
+      await supabase
+        .from('message_history')
+        .insert([newMessage]);
+      
+      notifyHistorySubscribers();
       
       toast({
         title: "Message Hidden",
