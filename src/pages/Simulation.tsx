@@ -3,6 +3,7 @@ import { Navbar } from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { motion } from "framer-motion";
 
 interface Message {
   id: number;
@@ -67,15 +68,18 @@ export default function Simulation() {
       <Navbar />
       <div className="container mx-auto px-4 pt-20">
         <div className="max-w-2xl mx-auto mt-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h1 className="text-2xl font-bold text-center mb-6">Message Filter Demo</h1>
-            <div className="space-y-4 h-[400px] overflow-y-auto mb-4 p-4 bg-gray-50 rounded-lg">
+            <div className="space-y-4 h-[400px] overflow-y-auto mb-4 p-2 sm:p-4 bg-gray-50 rounded-lg">
               {messages.map(message => (
                 <div
                   key={message.id}
                   className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
                     className={`max-w-[80%] p-3 rounded-lg ${
                       message.sender === "user"
                         ? "bg-purple-600 text-white"
@@ -87,11 +91,11 @@ export default function Simulation() {
                     ) : (
                       message.text
                     )}
-                  </div>
+                  </motion.div>
                 </div>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -99,7 +103,10 @@ export default function Simulation() {
                 placeholder="Type a message..."
                 className="flex-1"
               />
-              <Button onClick={handleSend} className="bg-purple-600 hover:bg-purple-700">
+              <Button 
+                onClick={handleSend} 
+                className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              >
                 Send
               </Button>
             </div>
