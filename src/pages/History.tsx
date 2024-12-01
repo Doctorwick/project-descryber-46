@@ -21,11 +21,31 @@ export default function History() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
-    setHistory(getMessageHistory());
+    // Convert Message[] to HistoryEntry[] when setting initial state
+    const messages = getMessageHistory().map(msg => ({
+      id: msg.id,
+      timestamp: msg.timestamp,
+      text: msg.text,
+      isHidden: msg.isHidden || false // Ensure isHidden is always boolean
+    }));
+    
+    setHistory(messages);
+    
+    // Subscribe to updates
     const unsubscribe = subscribeToHistory(() => {
-      setHistory(getMessageHistory());
+      const updatedMessages = getMessageHistory().map(msg => ({
+        id: msg.id,
+        timestamp: msg.timestamp,
+        text: msg.text,
+        isHidden: msg.isHidden || false
+      }));
+      setHistory(updatedMessages);
     });
-    return unsubscribe;
+
+    // Return cleanup function
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
