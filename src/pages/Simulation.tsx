@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useToast } from "@/components/ui/use-toast";
 import { MessageList } from "@/components/simulation/MessageList";
@@ -6,22 +6,26 @@ import { MessageInput } from "@/components/simulation/MessageInput";
 import { SimulationControls } from "@/components/simulation/SimulationControls";
 import { analyzeMessage } from "@/utils/messageFilter";
 import { Message } from "@/types/message";
+import { createClient } from '@supabase/supabase-js';
 
-export const addToHistory = (message: Message) => {
-  messageHistory.push(message);
-  subscribers.forEach(callback => callback());
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+export const addToHistory = async (message: Message) => {
+  await supabase
+    .from('message_history')
+    .insert([message]);
 };
 
-export const getMessageHistory = () => [...messageHistory];
-
-export const subscribeToHistory = (callback: () => void) => {
-  subscribers.add(callback);
-  return () => subscribers.delete(callback);
+export const getMessageHistory = async () => {
+  const { data } = await supabase
+    .from('message_history')
+    .select('*')
+    .order('timestamp', { ascending: false });
+  return data || [];
 };
-
-// Shared state between components
-const messageHistory: Message[] = [];
-const subscribers = new Set<() => void>();
 
 export default function Simulation() {
   const [messages, setMessages] = useState<Message[]>([
@@ -37,10 +41,10 @@ export default function Simulation() {
   const [isPaused, setIsPaused] = useState(false);
   const { toast } = useToast();
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim() || !isActive || isPaused) return;
 
-    const filterResult = analyzeMessage(input);
+    const filterResult = await analyzeMessage(input);
     const newMessage: Message = {
       id: Date.now(),
       text: input,
@@ -54,13 +58,11 @@ export default function Simulation() {
     setInput("");
 
     if (filterResult.isHarmful) {
-      addToHistory(newMessage);
-      
-      const description = `Message contained ${filterResult.categories.join(", ")} content with ${filterResult.severity} severity.`;
+      await addToHistory(newMessage);
       
       toast({
         title: "Message Hidden",
-        description,
+        description: `Message contained ${filterResult.categories.join(", ")} content with ${filterResult.severity} severity.`,
         variant: "destructive"
       });
     }
