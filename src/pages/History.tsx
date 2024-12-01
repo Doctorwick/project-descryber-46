@@ -15,21 +15,29 @@ export default function History() {
   const [history, setHistory] = useState<Message[]>([]);
 
   useEffect(() => {
+    console.log('History component mounted');
     const loadHistory = async () => {
-      const messages = await getMessageHistory();
-      console.log("Loaded message history:", messages);
-      setHistory(messages);
+      try {
+        const messages = await getMessageHistory();
+        console.log('Loaded message history:', messages);
+        setHistory(messages);
+      } catch (error) {
+        console.error('Error loading history:', error);
+      }
     };
 
     loadHistory();
 
     // Subscribe to history updates
     const unsubscribe = subscribeToHistory(() => {
-      console.log("History update detected, reloading...");
+      console.log('History update detected, reloading...');
       loadHistory();
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('History component unmounting');
+      unsubscribe();
+    };
   }, []);
 
   return (
@@ -55,7 +63,7 @@ export default function History() {
                       <TableCell>{new Date(message.timestamp).toLocaleString()}</TableCell>
                       <TableCell>{message.text}</TableCell>
                       <TableCell>
-                        {message.filterResult?.categories.join(", ")}
+                        {message.filterResult?.categories?.join(", ") || "N/A"}
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${

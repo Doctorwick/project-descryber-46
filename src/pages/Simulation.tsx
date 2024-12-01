@@ -12,13 +12,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
-}
-
-try {
-  new URL(supabaseUrl); // Validate URL format
-} catch (e) {
-  throw new Error('Invalid Supabase URL. Please check your .env file and ensure the URL is correct.');
+  throw new Error('Missing Supabase environment variables');
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -27,6 +21,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const historySubscribers: (() => void)[] = [];
 
 export const subscribeToHistory = (callback: () => void) => {
+  console.log('Subscribing to history updates');
   historySubscribers.push(callback);
   return () => {
     const index = historySubscribers.indexOf(callback);
@@ -37,6 +32,7 @@ export const subscribeToHistory = (callback: () => void) => {
 };
 
 const notifyHistorySubscribers = () => {
+  console.log('Notifying history subscribers');
   historySubscribers.forEach(callback => callback());
 };
 
@@ -50,7 +46,7 @@ export const getMessageHistory = async () => {
       
     if (error) {
       console.error('Error fetching message history:', error);
-      return [];
+      throw error;
     }
     
     // Transform the snake_case response to camelCase for frontend use
@@ -102,17 +98,34 @@ export default function Simulation() {
     setInput("");
 
     if (filterResult.isHarmful) {
-      await supabase
-        .from('message_history')
-        .insert([newMessage]);
-      
-      notifyHistorySubscribers();
-      
-      toast({
-        title: "Message Hidden",
-        description: `Message contained ${filterResult.categories.join(", ")} content with ${filterResult.severity} severity.`,
-        variant: "destructive"
-      });
+      try {
+        const { error } = await supabase
+          .from('message_history')
+          .insert([{
+            text: newMessage.text,
+            sender: newMessage.sender,
+            is_hidden: newMessage.isHidden,
+            timestamp: newMessage.timestamp,
+            filter_result: newMessage.filterResult
+          }]);
+
+        if (error) throw error;
+        
+        notifyHistorySubscribers();
+        
+        toast({
+          title: "Message Hidden",
+          description: `Message contained ${filterResult.categories.join(", ")} content with ${filterResult.severity} severity.`,
+          variant: "destructive"
+        });
+      } catch (error) {
+        console.error('Error storing message:', error);
+        toast({
+          title: "Error",
+          description: "Failed to store message in history.",
+          variant: "destructive"
+        });
+      }
     }
 
     // Bot response
@@ -189,4 +202,4 @@ export default function Simulation() {
       </div>
     </div>
   );
-}
+};
