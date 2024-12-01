@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMessageHistory } from "./Simulation";
+import { getMessageHistory, subscribeToHistory } from "./Simulation";
 import { Message } from "@/types/message";
 
 export default function History() {
