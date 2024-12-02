@@ -8,12 +8,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-try {
-  new URL(supabaseUrl);
-} catch (e) {
-  throw new Error('Invalid Supabase URL. Please check your .env file and ensure the URL is correct.');
-}
-
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface FilterResult {
@@ -24,16 +18,16 @@ export interface FilterResult {
 }
 
 const harmfulPatterns = {
-  profanity: /\b(fuck|shit|ass|bitch|damn|crap|piss|dick|cock|pussy|asshole)\b/i,
-  harassment: /\b(kill|die|hate|stupid|idiot|dumb|retard|loser|fat|ugly)\b/i,
-  threats: /\b(threat|kill|murder|hurt|attack|beat|fight|punch|shoot)\b/i,
-  discrimination: /\b(nazi|nigger|fag|gay|lesbian|trans|queer|jew|muslim|islam|christian)\b/i,
-  personalInfo: /\b(\d{3}[-.]?\d{3}[-.]?\d{4}|\w+@\w+\.\w{2,3}|(?:\d{1,3}\.){3}\d{1,3})\b/i
+  profanity: /\b(fuck|shit|ass|bitch|damn|crap|piss|dick|cock|pussy|asshole)\b/gi,
+  harassment: /\b(kill|die|hate|stupid|idiot|dumb|retard|loser|fat|ugly)\b/gi,
+  threats: /\b(threat|kill|murder|hurt|attack|beat|fight|punch|shoot)\b/gi,
+  discrimination: /\b(nazi|nigger|fag|gay|lesbian|trans|queer|jew|muslim|islam|christian)\b/gi,
+  personalInfo: /\b(\d{3}[-.]?\d{3}[-.]?\d{4}|\w+@\w+\.\w{2,3}|(?:\d{1,3}\.){3}\d{1,3})\b/gi
 };
 
 const calculateSeverity = (matches: number, confidence: number): "low" | "medium" | "high" => {
-  if (confidence > 0.8) return "high";
-  if (confidence > 0.5) return "medium";
+  if (matches >= 3 || confidence > 0.8) return "high";
+  if (matches >= 2 || confidence > 0.5) return "medium";
   return "low";
 };
 
@@ -43,13 +37,16 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   let maxConfidence = 0;
 
   Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
-    const matchCount = (text.match(pattern) || []).length;
+    const matchArray = text.match(pattern) || [];
+    const matchCount = matchArray.length;
     if (matchCount > 0) {
       matches.push(category);
       totalMatches += matchCount;
       maxConfidence = Math.max(maxConfidence, matchCount * 0.3);
     }
   });
+
+  const severity = calculateSeverity(totalMatches, maxConfidence);
 
   if (matches.length > 0) {
     try {
@@ -59,7 +56,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
           {
             text,
             categories: matches,
-            severity: calculateSeverity(totalMatches, maxConfidence),
+            severity,
             confidence: maxConfidence,
             timestamp: new Date().toISOString()
           }
@@ -70,7 +67,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
         toast({
           variant: "destructive",
           title: "Database Error",
-          description: "Failed to store message in history. The database table might not exist.",
+          description: "Failed to store message in history.",
         });
       }
     } catch (error) {
@@ -81,7 +78,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   return {
     isHarmful: matches.length > 0,
     categories: matches,
-    severity: calculateSeverity(totalMatches, maxConfidence),
+    severity,
     confidence: maxConfidence
   };
 };
