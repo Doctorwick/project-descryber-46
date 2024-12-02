@@ -40,6 +40,12 @@ export function Navbar() {
             >
               History
             </Link>
+            <Link
+              to="/support"
+              className="text-gray-600 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Support
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -83,6 +89,13 @@ export function Navbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               History
+            </Link>
+            <Link
+              to="/support"
+              className="block text-gray-600 hover:text-purple-600 px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Support
             </Link>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Index from "./pages/Index";
 import Simulation from "./pages/Simulation";
 import History from "./pages/History";
+import Support from "./pages/Support";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function AnimatedRoutes() {
           <Route path="/" element={<Index />} />
           <Route path="/simulation" element={<Simulation />} />
           <Route path="/history" element={<History />} />
+          <Route path="/support" element={<Support />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
