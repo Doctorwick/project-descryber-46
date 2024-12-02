@@ -25,9 +25,29 @@ const harmfulPatterns = {
   personalInfo: /\b(\d{3}[-.]?\d{3}[-.]?\d{4}|\w+@\w+\.\w{2,3}|(?:\d{1,3}\.){3}\d{1,3})\b/gi
 };
 
-const calculateSeverity = (matches: number, confidence: number): "low" | "medium" | "high" => {
-  if (matches >= 3 || confidence > 0.8) return "high";
-  if (matches >= 2 || confidence > 0.5) return "medium";
+const calculateSeverity = (matches: number, categories: string[], text: string): "low" | "medium" | "high" => {
+  // Check for direct threats or self-harm content
+  const containsSelfHarm = /\b(kill yourself|suicide|die)\b/i.test(text);
+  const containsDirectThreat = categories.includes('threats') && /\b(kill|murder)\b/i.test(text);
+  
+  if (containsSelfHarm || containsDirectThreat) {
+    return "high";
+  }
+  
+  // Multiple categories of harmful content
+  if (categories.length >= 2) {
+    return "high";
+  }
+  
+  // Single category but multiple matches
+  if (matches >= 3) {
+    return "high";
+  }
+  
+  if (matches >= 2 || categories.length > 0) {
+    return "medium";
+  }
+  
   return "low";
 };
 
@@ -46,7 +66,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
     }
   });
 
-  const severity = calculateSeverity(totalMatches, maxConfidence);
+  const severity = calculateSeverity(totalMatches, matches, text);
 
   if (matches.length > 0) {
     try {
