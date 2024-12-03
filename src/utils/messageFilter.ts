@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { pipeline } from '@huggingface/transformers';
 import { toast } from '@/components/ui/use-toast';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -16,6 +17,12 @@ export interface FilterResult {
   severity: "low" | "medium" | "high";
   confidence: number;
   bypassAttempted?: boolean;
+  aiAnalysis?: {
+    toxicity: number;
+    identity_attack: number;
+    insult: number;
+    threat: number;
+  };
 }
 
 const harmfulPatterns = {
@@ -44,8 +51,49 @@ const normalizeText = (text: string): string => {
       };
       return numberMap[match] || match;
     })
-    .replace(/[\W_]+/g, '')  // Remove special characters and underscores
-    .replace(/(.)\1+/g, '$1');  // Remove repeated characters
+    .replace(/[\W_]+/g, '')
+    .replace(/(.)\1+/g, '$1');
+};
+
+// Initialize the toxicity classifier
+let classifier: any = null;
+const initializeClassifier = async () => {
+  try {
+    classifier = await pipeline(
+      'text-classification',
+      'unitary/toxic-bert',
+      { device: 'cpu' }
+    );
+    console.log('Toxicity classifier initialized successfully');
+  } catch (error) {
+    console.error('Error initializing toxicity classifier:', error);
+  }
+};
+
+// Initialize the classifier when the module loads
+initializeClassifier();
+
+const analyzeWithAI = async (text: string) => {
+  if (!classifier) {
+    console.warn('Toxicity classifier not initialized yet');
+    return null;
+  }
+
+  try {
+    const results = await classifier(text, {
+      wait_for_model: true
+    });
+
+    return {
+      toxicity: results[0].score,
+      identity_attack: results[0].score > 0.7 ? results[0].score : 0,
+      insult: results[0].score > 0.6 ? results[0].score : 0,
+      threat: results[0].score > 0.8 ? results[0].score : 0
+    };
+  } catch (error) {
+    console.error('Error analyzing text with AI:', error);
+    return null;
+  }
 };
 
 const detectBypassAttempt = (originalText: string, normalizedText: string): boolean => {
@@ -74,7 +122,21 @@ const detectBypassAttempt = (originalText: string, normalizedText: string): bool
   return false;
 };
 
-const calculateSeverity = (matches: number, categories: string[], text: string): "low" | "medium" | "high" => {
+const calculateSeverity = (
+  matches: number, 
+  categories: string[], 
+  text: string, 
+  aiAnalysis?: FilterResult['aiAnalysis']
+): "low" | "medium" | "high" => {
+  // Check for high toxicity in AI analysis
+  if (aiAnalysis && (
+    aiAnalysis.toxicity > 0.8 ||
+    aiAnalysis.identity_attack > 0.7 ||
+    aiAnalysis.threat > 0.8
+  )) {
+    return "high";
+  }
+
   // Check for direct threats or self-harm content
   const containsSelfHarm = /\b(kill yourself|suicide|die)\b/i.test(text);
   const containsDirectThreat = categories.includes('threats') && /\b(kill|murder)\b/i.test(text);
@@ -108,7 +170,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   let totalMatches = 0;
   let maxConfidence = 0;
 
-  // Check both original and normalized text against harmful patterns
+  // Pattern-based analysis
   [originalText, normalizedText].forEach(textToCheck => {
     Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
       const matchArray = textToCheck.match(pattern) || [];
@@ -121,10 +183,27 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
     });
   });
 
+  // AI-powered analysis
+  const aiAnalysis = await analyzeWithAI(originalText);
+  
+  // Combine pattern matching with AI analysis
   const bypassAttempted = detectBypassAttempt(originalText, normalizedText);
-  const severity = calculateSeverity(totalMatches, matches, normalizedText);
+  const severity = calculateSeverity(totalMatches, matches, normalizedText, aiAnalysis);
 
-  if (matches.length > 0 || bypassAttempted) {
+  // Update confidence based on AI analysis
+  if (aiAnalysis) {
+    maxConfidence = Math.max(maxConfidence, aiAnalysis.toxicity);
+  }
+
+  // Consider message harmful if either pattern matching or AI analysis indicates it
+  const isHarmful = matches.length > 0 || 
+    (aiAnalysis && (
+      aiAnalysis.toxicity > 0.7 ||
+      aiAnalysis.identity_attack > 0.7 ||
+      aiAnalysis.threat > 0.7
+    ));
+
+  if (isHarmful) {
     try {
       const { error: harmfulError } = await supabase
         .from('harmful_messages')
@@ -152,10 +231,11 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   }
 
   return {
-    isHarmful: matches.length > 0,
+    isHarmful,
     categories: matches,
     severity,
     confidence: maxConfidence,
-    bypassAttempted
+    bypassAttempted,
+    aiAnalysis
   };
 };
