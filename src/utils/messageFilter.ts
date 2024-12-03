@@ -15,6 +15,7 @@ export interface FilterResult {
   categories: string[];
   severity: "low" | "medium" | "high";
   confidence: number;
+  bypassAttempted?: boolean;
 }
 
 const harmfulPatterns = {
@@ -23,6 +24,54 @@ const harmfulPatterns = {
   threats: /\b(threat|kill|murder|hurt|attack|beat|fight|punch|shoot|kys|kms|ys|rip|die)\b/gi,
   discrimination: /\b(nazi|nigger|fag|gay|lesbian|trans|queer|jew|muslim|islam|christian|n1g|f4g)\b/gi,
   personalInfo: /\b(\d{3}[-.]?\d{3}[-.]?\d{4}|\w+@\w+\.\w{2,3}|(?:\d{1,3}\.){3}\d{1,3})\b/gi
+};
+
+// Common bypass patterns
+const bypassPatterns = {
+  letterSpacing: /\b\w+\s+\w+\b/g,  // Detects intentional letter spacing
+  specialChars: /[\W_]+/g,  // Detects special characters used to break words
+  numbers: /\d+/g,  // Detects numbers used to replace letters
+  repeatedChars: /(.)\1{2,}/g,  // Detects repeated characters
+};
+
+const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/[0-9]/g, (match) => {
+      const numberMap: { [key: string]: string } = {
+        '0': 'o', '1': 'i', '3': 'e', '4': 'a',
+        '5': 's', '7': 't', '8': 'b', '9': 'g'
+      };
+      return numberMap[match] || match;
+    })
+    .replace(/[\W_]+/g, '')  // Remove special characters and underscores
+    .replace(/(.)\1+/g, '$1');  // Remove repeated characters
+};
+
+const detectBypassAttempt = (originalText: string, normalizedText: string): boolean => {
+  // Check for intentional letter spacing
+  if (bypassPatterns.letterSpacing.test(originalText)) {
+    return true;
+  }
+
+  // Check for excessive special characters
+  const specialCharCount = (originalText.match(bypassPatterns.specialChars) || []).length;
+  if (specialCharCount > originalText.length * 0.3) {
+    return true;
+  }
+
+  // Check for number substitutions
+  const numberCount = (originalText.match(bypassPatterns.numbers) || []).length;
+  if (numberCount > 0) {
+    return true;
+  }
+
+  // Check for repeated characters
+  if (bypassPatterns.repeatedChars.test(originalText)) {
+    return true;
+  }
+
+  return false;
 };
 
 const calculateSeverity = (matches: number, categories: string[], text: string): "low" | "medium" | "high" => {
@@ -52,29 +101,36 @@ const calculateSeverity = (matches: number, categories: string[], text: string):
 };
 
 export const analyzeMessage = async (text: string): Promise<FilterResult> => {
+  const originalText = text;
+  const normalizedText = normalizeText(text);
+  
   const matches: string[] = [];
   let totalMatches = 0;
   let maxConfidence = 0;
 
-  Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
-    const matchArray = text.match(pattern) || [];
-    const matchCount = matchArray.length;
-    if (matchCount > 0) {
-      matches.push(category);
-      totalMatches += matchCount;
-      maxConfidence = Math.max(maxConfidence, matchCount * 0.3);
-    }
+  // Check both original and normalized text against harmful patterns
+  [originalText, normalizedText].forEach(textToCheck => {
+    Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
+      const matchArray = textToCheck.match(pattern) || [];
+      const matchCount = matchArray.length;
+      if (matchCount > 0 && !matches.includes(category)) {
+        matches.push(category);
+        totalMatches += matchCount;
+        maxConfidence = Math.max(maxConfidence, matchCount * 0.3);
+      }
+    });
   });
 
-  const severity = calculateSeverity(totalMatches, matches, text);
+  const bypassAttempted = detectBypassAttempt(originalText, normalizedText);
+  const severity = calculateSeverity(totalMatches, matches, normalizedText);
 
-  if (matches.length > 0) {
+  if (matches.length > 0 || bypassAttempted) {
     try {
       const { error: harmfulError } = await supabase
         .from('harmful_messages')
         .insert([
           {
-            text,
+            text: originalText,
             categories: matches,
             severity,
             confidence: maxConfidence,
@@ -99,6 +155,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
     isHarmful: matches.length > 0,
     categories: matches,
     severity,
-    confidence: maxConfidence
+    confidence: maxConfidence,
+    bypassAttempted
   };
 };
