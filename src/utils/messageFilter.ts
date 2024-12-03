@@ -61,7 +61,7 @@ const initializeClassifier = async () => {
   try {
     classifier = await pipeline(
       'text-classification',
-      'unitary/toxic-bert',
+      'martin-ha/toxic-comment-model',
       { device: 'cpu' }
     );
     console.log('Toxicity classifier initialized successfully');
@@ -84,11 +84,13 @@ const analyzeWithAI = async (text: string) => {
       wait_for_model: true
     });
 
+    // Map the results to our expected format
+    const score = results[0].score;
     return {
-      toxicity: results[0].score,
-      identity_attack: results[0].score > 0.7 ? results[0].score : 0,
-      insult: results[0].score > 0.6 ? results[0].score : 0,
-      threat: results[0].score > 0.8 ? results[0].score : 0
+      toxicity: score,
+      identity_attack: score > 0.7 ? score : 0,
+      insult: score > 0.6 ? score : 0,
+      threat: score > 0.8 ? score : 0
     };
   } catch (error) {
     console.error('Error analyzing text with AI:', error);
