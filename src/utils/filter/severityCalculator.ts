@@ -10,6 +10,7 @@ export const calculateSeverity = (
   if (aiAnalysis && (
     aiAnalysis.toxicity > 0.8 ||
     aiAnalysis.identity_attack > 0.7 ||
+    aiAnalysis.insult > 0.7 ||    // Added insult threshold
     aiAnalysis.threat > 0.8
   )) {
     return "high";
@@ -31,6 +32,16 @@ export const calculateSeverity = (
   // Single category but multiple matches
   if (matches >= 3) {
     return "high";
+  }
+  
+  // Medium severity for AI-detected toxicity above lower threshold
+  if (aiAnalysis && (
+    aiAnalysis.toxicity > 0.6 ||
+    aiAnalysis.identity_attack > 0.6 ||
+    aiAnalysis.insult > 0.6 ||
+    aiAnalysis.threat > 0.6
+  )) {
+    return "medium";
   }
   
   if (matches >= 2 || categories.length > 0) {

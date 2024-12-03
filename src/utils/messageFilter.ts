@@ -37,7 +37,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
     });
   });
 
-  // AI-powered analysis
+  // AI-powered analysis with enhanced detection
   const aiAnalysis = await analyzeWithAI(originalText);
   
   // Combine pattern matching with AI analysis
@@ -46,14 +46,21 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
 
   // Update confidence based on AI analysis
   if (aiAnalysis) {
-    maxConfidence = Math.max(maxConfidence, aiAnalysis.toxicity);
+    maxConfidence = Math.max(
+      maxConfidence, 
+      aiAnalysis.toxicity,
+      aiAnalysis.identity_attack,
+      aiAnalysis.insult,
+      aiAnalysis.threat
+    );
   }
 
   // Consider message harmful if either pattern matching or AI analysis indicates it
   const isHarmful = matches.length > 0 || 
     (aiAnalysis && (
-      aiAnalysis.toxicity > 0.7 ||
-      aiAnalysis.identity_attack > 0.7 ||
+      aiAnalysis.toxicity > 0.6 ||      // Lowered threshold for better sensitivity
+      aiAnalysis.identity_attack > 0.6 ||
+      aiAnalysis.insult > 0.6 ||
       aiAnalysis.threat > 0.7
     ));
 
