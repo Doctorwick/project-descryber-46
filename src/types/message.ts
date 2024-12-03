@@ -1,4 +1,4 @@
-import { FilterResult } from "@/utils/messageFilter";
+import { FilterResult } from "@/types/filter";
 
 export interface Message {
   id: number;
