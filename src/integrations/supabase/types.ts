@@ -75,6 +75,8 @@ export type Database = {
           filter_result: Json | null
           id: number
           is_hidden: boolean | null
+          restored_at: string | null
+          restored_from_id: number | null
           sender: string
           text: string
           timestamp: string | null
@@ -84,6 +86,8 @@ export type Database = {
           filter_result?: Json | null
           id?: never
           is_hidden?: boolean | null
+          restored_at?: string | null
+          restored_from_id?: number | null
           sender: string
           text: string
           timestamp?: string | null
@@ -93,6 +97,8 @@ export type Database = {
           filter_result?: Json | null
           id?: never
           is_hidden?: boolean | null
+          restored_at?: string | null
+          restored_from_id?: number | null
           sender?: string
           text?: string
           timestamp?: string | null
