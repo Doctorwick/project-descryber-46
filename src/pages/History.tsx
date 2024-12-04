@@ -22,7 +22,7 @@ export default function History() {
       setHistory(messages.map(msg => ({
         ...msg,
         sender: msg.sender as MessageSender,
-        filterResult: msg.filter_result as FilterResult | undefined
+        filterResult: msg.filterResult as FilterResult | undefined
       })));
     } catch (error) {
       console.error('Error loading history:', error);
