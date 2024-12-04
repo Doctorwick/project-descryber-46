@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
@@ -73,8 +73,12 @@ export default function History() {
 
       toast({
         title: "Success",
-        description: "Message restored successfully",
-        icon: <CheckCircle className="h-4 w-4 text-green-500" />,
+        description: (
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>Message restored successfully</span>
+          </div>
+        ),
       });
       
       await loadHistory();
@@ -83,7 +87,12 @@ export default function History() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to restore message.",
+        description: (
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>Failed to restore message</span>
+          </div>
+        ),
       });
     } finally {
       setRestoringId(null);

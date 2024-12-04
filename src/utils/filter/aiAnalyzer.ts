@@ -9,8 +9,7 @@ export const initializeClassifier = async () => {
       'text-classification',
       'martin-ha/toxic-comment-model',
       { 
-        device: 'cpu',
-        quantized: true // For better performance
+        device: 'cpu'
       }
     );
     console.log('Enhanced toxicity classifier initialized successfully');
