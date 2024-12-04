@@ -1,4 +1,5 @@
 import { FilterResult } from "@/types/filter";
+import { analyzeWithAI } from "./aiAnalyzer";
 import { normalizeText } from "./textNormalizer";
 import { detectBypassAttempt } from "./bypassDetector";
 
@@ -12,14 +13,27 @@ interface AiAnalysisResult {
 
 export const analyzeContextAndIntent = async (text: string): Promise<AiAnalysisResult> => {
   try {
-    const response = await fetch("/api/analyze-context", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
+    const aiResult = await analyzeWithAI(text);
+    if (!aiResult) {
+      return {
+        toxicity: 0.5,
+        identity_attack: 0,
+        insult: 0,
+        threat: 0,
+        context_score: 0.5,
+      };
+    }
+
+    // Calculate context score based on patterns
+    const gamingContext = /\b(game|play|server|lag|crash|bug|glitch)\b/i.test(text);
+    const frustrationContext = /\b(damn|shit|fuck|fck|f\*ck)\b.*\b(crash|lag|bug|glitch)\b/i.test(text);
     
-    if (!response.ok) throw new Error("Failed to analyze context");
-    return await response.json();
+    const contextScore = gamingContext && frustrationContext ? 0.8 : 0.4;
+
+    return {
+      ...aiResult,
+      context_score: contextScore,
+    };
   } catch (error) {
     console.error("Error in AI analysis:", error);
     return {
