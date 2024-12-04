@@ -1,4 +1,6 @@
 import { pipeline } from '@huggingface/transformers';
+import { normalizeText, isContextuallyAllowed } from './textNormalizer';
+import { harmfulPatterns } from './patterns';
 
 let classifier: any = null;
 
@@ -27,24 +29,33 @@ export const analyzeWithAI = async (text: string) => {
   }
 
   try {
+    // Find any profanity in the text
+    const profanityFound: string[] = [];
+    Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
+      const matches = text.match(pattern);
+      if (matches) {
+        profanityFound.push(...matches);
+      }
+    });
+
+    // Check if the context allows the profanity
+    const isAllowed = isContextuallyAllowed(text, profanityFound);
+    if (isAllowed) {
+      return {
+        toxicity: 0.3, // Low toxicity score for allowed contexts
+        identity_attack: 0,
+        insult: 0,
+        threat: 0
+      };
+    }
+
     // Analyze original text
     const results = await classifier(text, {
       wait_for_model: true
     });
 
-    // Also analyze text with common substitutions normalized
-    const normalizedText = text
-      .toLowerCase()
-      .replace(/[0-9]/g, letter => {
-        const numberMap: { [key: string]: string } = {
-          '0': 'o', '1': 'i', '3': 'e', '4': 'a',
-          '5': 's', '7': 't', '8': 'b', '9': 'g'
-        };
-        return numberMap[letter] || letter;
-      })
-      .replace(/(\w)\1+/g, '$1') // Replace repeated characters
-      .replace(/[^a-z0-9\s]/g, ''); // Remove special characters
-
+    // Also analyze normalized text to catch bypasses
+    const normalizedText = normalizeText(text);
     const normalizedResults = await classifier(normalizedText, {
       wait_for_model: true
     });
@@ -52,11 +63,15 @@ export const analyzeWithAI = async (text: string) => {
     // Use the higher score between original and normalized text
     const score = Math.max(results[0].score, normalizedResults[0].score);
 
+    // Adjust scores based on context and content
+    const hasDirectInsult = /\b(you|ur|your|u)\b.*\b(suck|stink|smell|ugly|stupid|dumb)\b/i.test(text);
+    const hasBypassAttempt = text !== normalizedText;
+
     return {
-      toxicity: score,
-      identity_attack: score > 0.7 ? score : 0,
-      insult: score > 0.6 ? score : 0,
-      threat: score > 0.8 ? score : 0
+      toxicity: hasBypassAttempt ? Math.max(score, 0.7) : score,
+      identity_attack: /\b(ur|your|u|yo)\s*mom\b/i.test(text) ? 0.8 : score * 0.5,
+      insult: hasDirectInsult ? Math.max(score, 0.8) : score * 0.7,
+      threat: /\b(kill|die|hurt)\b/i.test(text) ? Math.max(score, 0.9) : score * 0.3
     };
   } catch (error) {
     console.error('Error analyzing text with AI:', error);
