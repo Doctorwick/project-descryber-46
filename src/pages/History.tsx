@@ -6,6 +6,7 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMessageHistory, subscribeToHistory } from "./Simulation";
 import { Message, MessageSender } from "@/types/message";
+import { FilterResult } from "@/types/filter";
 import { HistoryTable } from "@/components/history/HistoryTable";
 import { ClearHistoryDialog } from "@/components/history/ClearHistoryDialog";
 
@@ -20,7 +21,8 @@ export default function History() {
       const messages = await getMessageHistory();
       setHistory(messages.map(msg => ({
         ...msg,
-        sender: msg.sender as MessageSender
+        sender: msg.sender as MessageSender,
+        filterResult: msg.filter_result as FilterResult | undefined
       })));
     } catch (error) {
       console.error('Error loading history:', error);
