@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMessageHistory, subscribeToHistory } from "./Simulation";
-import { Message } from "@/types/message";
+import { Message, MessageSender } from "@/types/message";
 import { HistoryTable } from "@/components/history/HistoryTable";
 import { ClearHistoryDialog } from "@/components/history/ClearHistoryDialog";
 
@@ -18,7 +18,10 @@ export default function History() {
   const loadHistory = async () => {
     try {
       const messages = await getMessageHistory();
-      setHistory(messages);
+      setHistory(messages.map(msg => ({
+        ...msg,
+        sender: msg.sender as MessageSender
+      })));
     } catch (error) {
       console.error('Error loading history:', error);
       toast({

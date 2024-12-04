@@ -10,6 +10,7 @@ export interface FilterResult {
     insult: number;
     threat: number;
   };
+  [key: string]: any; // Add index signature to satisfy Json type
 }
 
 export interface PatternMatch {

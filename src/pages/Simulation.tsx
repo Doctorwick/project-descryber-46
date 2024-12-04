@@ -5,7 +5,7 @@ import { MessageList } from "@/components/simulation/MessageList";
 import { MessageInput } from "@/components/simulation/MessageInput";
 import { SimulationControls } from "@/components/simulation/SimulationControls";
 import { analyzeMessage } from "@/utils/messageFilter";
-import { Message } from "@/types/message";
+import { Message, MessageSender, MessageHistoryRow } from "@/types/message";
 import { supabase } from "@/integrations/supabase/client";
 
 // Create a subscribers array to handle history updates
@@ -43,7 +43,7 @@ export const getMessageHistory = async () => {
     const transformedData = data?.map(message => ({
       id: message.id,
       text: message.text,
-      sender: message.sender,
+      sender: message.sender as MessageSender,
       isHidden: message.is_hidden,
       timestamp: message.timestamp,
       filterResult: message.filter_result
@@ -91,13 +91,13 @@ export default function Simulation() {
       try {
         const { error } = await supabase
           .from('message_history')
-          .insert([{
+          .insert({
             text: newMessage.text,
             sender: newMessage.sender,
             is_hidden: newMessage.isHidden,
             timestamp: newMessage.timestamp,
-            filter_result: newMessage.filterResult
-          }]);
+            filter_result: filterResult as any // Type assertion needed due to Json type limitations
+          });
 
         if (error) throw error;
         
@@ -134,22 +134,28 @@ export default function Simulation() {
 
   // Handle message restoration from history
   useEffect(() => {
-    const subscription = supabase
-      .from('message_history')
-      .on('UPDATE', (payload) => {
-        if (payload.new && !payload.new.is_hidden) {
-          // Update the corresponding message in the simulation
-          setMessages(prev => prev.map(msg => 
-            msg.id === payload.new.id 
-              ? { ...msg, isHidden: false }
-              : msg
-          ));
+    const channel = supabase.channel('message_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'message_history'
+        },
+        (payload) => {
+          if (payload.new && !payload.new.is_hidden) {
+            setMessages(prev => prev.map(msg => 
+              msg.id === payload.new.id 
+                ? { ...msg, isHidden: false }
+                : msg
+            ));
+          }
         }
-      })
+      )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, []);
 
