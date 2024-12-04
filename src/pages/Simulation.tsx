@@ -6,16 +6,7 @@ import { MessageInput } from "@/components/simulation/MessageInput";
 import { SimulationControls } from "@/components/simulation/SimulationControls";
 import { analyzeMessage } from "@/utils/messageFilter";
 import { Message } from "@/types/message";
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from "@/integrations/supabase/client";
 
 // Create a subscribers array to handle history updates
 const historySubscribers: (() => void)[] = [];
@@ -49,7 +40,6 @@ export const getMessageHistory = async () => {
       throw error;
     }
     
-    // Transform the snake_case response to camelCase for frontend use
     const transformedData = data?.map(message => ({
       id: message.id,
       text: message.text,
@@ -142,6 +132,27 @@ export default function Simulation() {
     }, 1000);
   };
 
+  // Handle message restoration from history
+  useEffect(() => {
+    const subscription = supabase
+      .from('message_history')
+      .on('UPDATE', (payload) => {
+        if (payload.new && !payload.new.is_hidden) {
+          // Update the corresponding message in the simulation
+          setMessages(prev => prev.map(msg => 
+            msg.id === payload.new.id 
+              ? { ...msg, isHidden: false }
+              : msg
+          ));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const handleStart = () => {
     setIsActive(true);
     setIsPaused(false);
@@ -202,4 +213,4 @@ export default function Simulation() {
       </div>
     </div>
   );
-};
+}

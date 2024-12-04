@@ -24,7 +24,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   let totalMatches = 0;
   let maxConfidence = 0;
 
-  // Enhanced pattern-based analysis
+  // Enhanced pattern-based analysis with reduced sensitivity
   [originalText, normalizedText].forEach(textToCheck => {
     Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
       const matchArray = textToCheck.match(pattern) || [];
@@ -54,13 +54,10 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
     aiAnalysis.threat
   );
 
-  // Consider message harmful based on multiple factors
+  // Consider message harmful only for medium/high severity content
   const isHarmful = !isAppropriate && (
-    matches.length > 0 || 
-    (aiAnalysis.toxicity > 0.6) ||
-    (aiAnalysis.identity_attack > 0.6) ||
-    (aiAnalysis.insult > 0.6) ||
-    (aiAnalysis.threat > 0.7) ||
+    (severity === 'high') || 
+    (severity === 'medium' && maxConfidence > 0.7) ||
     bypassAttempted
   );
 
