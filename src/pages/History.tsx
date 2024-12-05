@@ -4,11 +4,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getMessageHistory, subscribeToHistory } from "./Simulation";
 import { Message, MessageSender } from "@/types/message";
 import { FilterResult } from "@/types/filter";
 import { HistoryTable } from "@/components/history/HistoryTable";
 import { ClearHistoryDialog } from "@/components/history/ClearHistoryDialog";
+import { getMessageHistory, subscribeToHistory } from "@/utils/historyUtils";
 
 export default function History() {
   const [history, setHistory] = useState<Message[]>([]);
