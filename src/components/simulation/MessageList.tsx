@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, MessageSquare } from "lucide-react";
 import { Message } from "@/types/message";
 
 interface MessageListProps {
@@ -17,7 +17,12 @@ export const MessageList = ({ messages }: MessageListProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            transition={{ 
+              duration: 0.4,
+              type: "spring",
+              stiffness: 100,
+              damping: 15
+            }}
             className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
           >
             <motion.div
@@ -28,21 +33,30 @@ export const MessageList = ({ messages }: MessageListProps) => {
                   : "bg-white text-gray-800 border border-gray-100"
               }`}
             >
-              {message.isHidden ? (
-                <div className="flex items-center gap-2 text-gray-400">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span className="italic">Message hidden due to harmful content</span>
-                </div>
-              ) : (
-                <div className="relative">
-                  <p className="text-sm leading-relaxed">{message.text}</p>
-                  {message.filterResult?.severity && (
-                    <div className="mt-1 text-xs opacity-75">
-                      Severity: {message.filterResult.severity}
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="flex items-start gap-2">
+                <MessageSquare className={`w-4 h-4 mt-1 ${
+                  message.sender === "user" ? "text-white" : "text-purple-600"
+                }`} />
+                {message.isHidden ? (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="italic">Message hidden due to harmful content</span>
+                  </div>
+                ) : (
+                  <div className="relative flex-1">
+                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    {message.filterResult?.severity && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-1 text-xs opacity-75"
+                      >
+                        Severity: {message.filterResult.severity}
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         ))}
