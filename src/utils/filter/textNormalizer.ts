@@ -1,4 +1,4 @@
-import { allowedContexts } from './patterns';
+import { allowedContexts, bypassPatterns } from './patterns';
 
 export const normalizeText = (text: string): string => {
   let normalized = text.toLowerCase();
@@ -86,5 +86,3 @@ function calculateSimilarity(text1: string, text2: string): number {
   const union = new Set([...set1, ...set2]);
   return intersection.size / union.size;
 }
-
-import { bypassPatterns } from './patterns';
