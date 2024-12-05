@@ -8,7 +8,7 @@ interface SimulationState {
   messages: Message[];
   setIsActive: (isActive: boolean) => void;
   setIsPaused: (isPaused: boolean) => void;
-  setMessages: (messages: Message[]) => void;
+  setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
   reset: () => void;
 }
 
@@ -25,7 +25,9 @@ export const useSimulationStore = create<SimulationState>()(
       }],
       setIsActive: (isActive) => set({ isActive }),
       setIsPaused: (isPaused) => set({ isPaused }),
-      setMessages: (messages) => set({ messages }),
+      setMessages: (messages) => set((state) => ({ 
+        messages: typeof messages === 'function' ? messages(state.messages) : messages 
+      })),
       reset: () => set({
         isActive: false,
         isPaused: false,
