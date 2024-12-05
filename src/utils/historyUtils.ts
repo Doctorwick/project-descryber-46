@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Message, MessageHistoryRow, MessageSender } from "@/types/message";
+import { FilterResult } from "@/types/filter";
 
 export const getMessageHistory = async (): Promise<Message[]> => {
   const { data, error } = await supabase
@@ -12,10 +13,10 @@ export const getMessageHistory = async (): Promise<Message[]> => {
   return (data as MessageHistoryRow[]).map(msg => ({
     id: msg.id,
     text: msg.text,
-    sender: msg.sender as MessageSender, // Cast the sender to MessageSender type
+    sender: msg.sender as MessageSender,
     isHidden: msg.is_hidden,
     timestamp: msg.timestamp,
-    filterResult: msg.filter_result
+    filterResult: msg.filter_result as FilterResult | undefined
   }));
 };
 
