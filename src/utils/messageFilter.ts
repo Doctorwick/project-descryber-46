@@ -24,7 +24,7 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
   let totalMatches = 0;
   let maxConfidence = 0;
 
-  // Enhanced pattern-based analysis with reduced sensitivity
+  // Reduced sensitivity pattern-based analysis
   [originalText, normalizedText].forEach(textToCheck => {
     Object.entries(harmfulPatterns).forEach(([category, pattern]) => {
       const matchArray = textToCheck.match(pattern) || [];
@@ -32,33 +32,32 @@ export const analyzeMessage = async (text: string): Promise<FilterResult> => {
       if (matchCount > 0 && !matches.includes(category)) {
         matches.push(category);
         totalMatches += matchCount;
-        maxConfidence = Math.max(maxConfidence, matchCount * 0.3);
+        maxConfidence = Math.max(maxConfidence, matchCount * 0.2); // Reduced confidence multiplier
       }
     });
   });
 
-  // Enhanced AI analysis with context understanding
+  // Enhanced AI analysis with reduced sensitivity
   const aiAnalysis = await analyzeContextAndIntent(originalText);
   const isAppropriate = isContextuallyAppropriate(originalText, aiAnalysis);
   
-  // Bypass detection with improved accuracy
   const bypassAttempted = detectBypassAttempt(originalText, normalizedText);
   const severity = calculateSeverity(totalMatches, matches, normalizedText, aiAnalysis);
 
-  // Update confidence based on enhanced AI analysis
+  // Update confidence based on AI analysis with reduced sensitivity
   maxConfidence = Math.max(
     maxConfidence, 
-    aiAnalysis.toxicity,
-    aiAnalysis.identity_attack,
-    aiAnalysis.insult,
+    aiAnalysis.toxicity * 0.7, // Reduced sensitivity
+    aiAnalysis.identity_attack * 0.7,
+    aiAnalysis.insult * 0.7,
     aiAnalysis.threat
   );
 
-  // Consider message harmful only for medium/high severity content
+  // More lenient harmful content detection
   const isHarmful = !isAppropriate && (
-    (severity === 'high') || 
-    (severity === 'medium' && maxConfidence > 0.7) ||
-    bypassAttempted
+    (severity === 'high' && maxConfidence > 0.8) || // Increased threshold
+    (severity === 'medium' && maxConfidence > 0.9) || // Increased threshold
+    (bypassAttempted && severity === 'high')
   );
 
   if (isHarmful) {
