@@ -89,7 +89,7 @@ export default function Simulation() {
         sender: "bot",
         timestamp: new Date().toISOString()
       };
-      setMessages(prevMessages => [...prevMessages, botMessage]);
+      setMessages((prevMessages: Message[]) => [...prevMessages, botMessage]);
     }, 1000);
   };
 
