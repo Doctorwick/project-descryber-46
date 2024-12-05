@@ -1,4 +1,4 @@
-import { bypassPatterns } from './patterns';
+import { allowedContexts } from './patterns';
 
 export const normalizeText = (text: string): string => {
   let normalized = text.toLowerCase();
@@ -44,8 +44,6 @@ export const normalizeText = (text: string): string => {
 };
 
 export const isContextuallyAllowed = (text: string, profanity: string[]): boolean => {
-  const { allowedContexts } = require('./patterns');
-  
   // Check each context pattern
   for (const context of allowedContexts) {
     if (context.pattern.test(text)) {
@@ -88,3 +86,5 @@ function calculateSimilarity(text1: string, text2: string): number {
   const union = new Set([...set1, ...set2]);
   return intersection.size / union.size;
 }
+
+import { bypassPatterns } from './patterns';
