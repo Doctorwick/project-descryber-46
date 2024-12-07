@@ -22,36 +22,37 @@ export const SimulationControls = ({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex gap-2"
+      className="flex gap-3"
     >
       {!isActive ? (
         <Button 
           onClick={onStart}
-          className="bg-green-600 hover:bg-green-700 transition-all duration-300 shadow-sm 
-            hover:shadow-md gap-2"
+          className="bg-green-500 hover:bg-green-600 transition-all duration-300 shadow-lg 
+            hover:shadow-xl gap-2 h-11 px-6 text-base font-medium"
         >
-          <Play className="w-4 h-4" />
-          Start
+          <Play className="w-5 h-5" />
+          Start Simulation
         </Button>
       ) : (
         <>
           <Button 
             onClick={onPause}
-            className={`transition-all duration-300 shadow-sm hover:shadow-md gap-2 ${
+            className={`transition-all duration-300 shadow-lg hover:shadow-xl gap-2 h-11 px-6 
+              text-base font-medium ${
               isPaused 
-                ? 'bg-yellow-600 hover:bg-yellow-700' 
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-yellow-500 hover:bg-yellow-600' 
+                : 'bg-blue-500 hover:bg-blue-600'
             }`}
           >
-            <Pause className="w-4 h-4" />
+            <Pause className="w-5 h-5" />
             {isPaused ? 'Resume' : 'Pause'}
           </Button>
           <Button 
             onClick={onStop}
-            className="bg-red-600 hover:bg-red-700 transition-all duration-300 shadow-sm 
-              hover:shadow-md gap-2"
+            className="bg-red-500 hover:bg-red-600 transition-all duration-300 shadow-lg 
+              hover:shadow-xl gap-2 h-11 px-6 text-base font-medium"
           >
-            <StopCircle className="w-4 h-4" />
+            <StopCircle className="w-5 h-5" />
             Stop
           </Button>
         </>

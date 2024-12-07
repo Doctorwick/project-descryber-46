@@ -9,7 +9,7 @@ import { Message } from "@/types/message";
 import { supabase } from "@/integrations/supabase/client";
 import { useSimulationStore } from "@/store/simulationStore";
 import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Shield } from "lucide-react";
 
 export default function Simulation() {
   const [input, setInput] = useState("");
@@ -119,25 +119,36 @@ export default function Simulation() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
       <Navbar />
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="container mx-auto px-4 pt-20"
+        className="container mx-auto px-4 pt-24"
       >
-        <div className="max-w-2xl mx-auto mt-8">
+        <div className="max-w-3xl mx-auto">
           <motion.div 
-            className="bg-white rounded-lg shadow-lg p-6"
+            className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-purple-100"
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-purple-800">
-                Message Filter Demo
-              </h1>
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-xl">
+                  <Shield className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r 
+                    from-purple-600 to-purple-800">
+                    Message Filter Demo
+                  </h1>
+                  <p className="text-gray-600 text-sm mt-1">
+                    Test our AI-powered content filtering system
+                  </p>
+                </div>
+              </div>
               <SimulationControls
                 isActive={isActive}
                 isPaused={isPaused}
