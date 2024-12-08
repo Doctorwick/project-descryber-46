@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { RotateCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { RotateCw, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MessageRestoreButtonProps {
@@ -12,6 +12,7 @@ interface MessageRestoreButtonProps {
 
 export const MessageRestoreButton = ({ messageId, onRestore }: MessageRestoreButtonProps) => {
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
 
   const handleRestore = async () => {
@@ -36,6 +37,9 @@ export const MessageRestoreButton = ({ messageId, onRestore }: MessageRestoreBut
         .eq("id", messageId);
 
       if (updateError) throw updateError;
+
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 2000);
 
       toast({
         title: "Message Restored",
@@ -63,17 +67,34 @@ export const MessageRestoreButton = ({ messageId, onRestore }: MessageRestoreBut
       <Button
         variant="outline"
         size="sm"
-        className="gap-2 bg-purple-50 hover:bg-purple-100 transition-all duration-300"
+        className={cn(
+          "gap-2 transition-all duration-300",
+          isSuccess ? "bg-green-50 text-green-600" : "bg-purple-50 hover:bg-purple-100"
+        )}
         onClick={handleRestore}
-        disabled={isRestoring}
+        disabled={isRestoring || isSuccess}
       >
-        <motion.div
-          animate={isRestoring ? { rotate: 360 } : {}}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <RotateCw className="w-4 h-4" />
-        </motion.div>
-        {isRestoring ? "Restoring..." : "Restore"}
+        <AnimatePresence mode="wait">
+          {isSuccess ? (
+            <motion.div
+              key="success"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+            >
+              <Check className="w-4 h-4" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="loading"
+              animate={isRestoring ? { rotate: 360 } : {}}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <RotateCw className="w-4 h-4" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {isSuccess ? "Restored!" : isRestoring ? "Restoring..." : "Restore"}
       </Button>
     </motion.div>
   );
