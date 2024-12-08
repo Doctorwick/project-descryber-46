@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RotateCw, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface MessageRestoreButtonProps {
   messageId: number;
