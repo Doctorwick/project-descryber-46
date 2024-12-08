@@ -22,7 +22,7 @@ export const HistoryTable = ({ history, restoringId, onRestore, isMobile }: Hist
   const filteredHistory = history
     .filter(message => {
       if (filter === "harmful") {
-        return message.isHidden === true;
+        return Boolean(message.filterResult?.isHarmful);
       }
       return true;
     })
@@ -60,15 +60,26 @@ export const HistoryTable = ({ history, restoringId, onRestore, isMobile }: Hist
       <ScrollArea className="h-[600px] w-full pr-4">
         <div className="space-y-4">
           <AnimatePresence mode="popLayout">
-            {filteredHistory.map((message) => (
-              <MessageCard
-                key={message.id}
-                message={message}
-                restoringId={restoringId}
-                onRestore={onRestore}
-                onCopy={handleCopyMessage}
-              />
-            ))}
+            {filteredHistory.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-8 text-gray-500"
+              >
+                No messages found
+              </motion.div>
+            ) : (
+              filteredHistory.map((message) => (
+                <MessageCard
+                  key={message.id}
+                  message={message}
+                  restoringId={restoringId}
+                  onRestore={onRestore}
+                  onCopy={handleCopyMessage}
+                />
+              ))
+            )}
           </AnimatePresence>
         </div>
       </ScrollArea>

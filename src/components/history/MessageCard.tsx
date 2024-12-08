@@ -15,6 +15,8 @@ interface MessageCardProps {
 }
 
 export const MessageCard = ({ message, restoringId, onRestore, onCopy }: MessageCardProps) => {
+  const severity = message.filterResult?.severity || "low";
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -25,9 +27,9 @@ export const MessageCard = ({ message, restoringId, onRestore, onCopy }: Message
       <Card 
         className={cn(
           "overflow-hidden border-l-4 transition-all duration-200 hover:shadow-md",
-          message.filterResult?.severity === 'high' 
+          severity === 'high' 
             ? "border-l-red-500" 
-            : message.filterResult?.severity === 'medium'
+            : severity === 'medium'
             ? "border-l-yellow-500"
             : "border-l-blue-500"
         )}
@@ -42,18 +44,18 @@ export const MessageCard = ({ message, restoringId, onRestore, onCopy }: Message
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {message.filterResult?.severity && (
+                {severity !== "low" && (
                   <Badge 
                     variant={
-                      message.filterResult.severity === 'high' 
+                      severity === 'high' 
                         ? 'destructive'
-                        : message.filterResult.severity === 'medium'
+                        : severity === 'medium'
                         ? 'warning'
                         : 'default'
                     }
                     className="capitalize"
                   >
-                    {message.filterResult.severity}
+                    {severity}
                   </Badge>
                 )}
                 <Button
@@ -95,7 +97,7 @@ export const MessageCard = ({ message, restoringId, onRestore, onCopy }: Message
             </div>
 
             {message.filterResult?.categories && message.filterResult.categories.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {message.filterResult.categories.map((category, idx) => (
                   <Badge
                     key={idx}
@@ -112,7 +114,7 @@ export const MessageCard = ({ message, restoringId, onRestore, onCopy }: Message
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex justify-end"
+                className="flex justify-end mt-2"
               >
                 <Button
                   variant="outline"
@@ -129,13 +131,7 @@ export const MessageCard = ({ message, restoringId, onRestore, onCopy }: Message
                     <RotateCw className="w-4 h-4" />
                   </motion.div>
                   <span>{restoringId === message.id ? "Restoring..." : "Restore Message"}</span>
-                  <motion.div
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </motion.div>
+                  <ChevronRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
               </motion.div>
             )}
