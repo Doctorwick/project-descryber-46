@@ -94,7 +94,7 @@ export const MessageCard = ({ message, restoringId, onRestore, onCopy }: Message
               </div>
             </div>
 
-            {message.filterResult?.categories && (
+            {message.filterResult?.categories && message.filterResult.categories.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {message.filterResult.categories.map((category, idx) => (
                   <Badge

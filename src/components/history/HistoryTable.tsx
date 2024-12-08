@@ -21,7 +21,9 @@ export const HistoryTable = ({ history, restoringId, onRestore, isMobile }: Hist
 
   const filteredHistory = history
     .filter(message => {
-      if (filter === "harmful") return message.isHidden;
+      if (filter === "harmful") {
+        return message.isHidden === true;
+      }
       return true;
     })
     .filter(message => 
