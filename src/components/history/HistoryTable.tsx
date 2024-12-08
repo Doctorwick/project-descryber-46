@@ -21,10 +21,10 @@ export const HistoryTable = ({ history, restoringId, onRestore, isMobile }: Hist
 
   const filteredHistory = history
     .filter(message => {
-      if (filter === "harmful") {
-        return Boolean(message.filterResult?.isHarmful);
-      }
-      return true;
+      // Show all messages when filter is "all"
+      if (filter === "all") return true;
+      // Only show harmful messages when filter is "harmful"
+      return Boolean(message.filterResult?.isHarmful);
     })
     .filter(message => 
       message.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
