@@ -1,4 +1,4 @@
-import { CircuitBoard, Brain } from "lucide-react";
+import { Shield, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const Logo = () => {
@@ -14,7 +14,7 @@ export const Logo = () => {
         animate={{ opacity: 1, rotate: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <CircuitBoard className="w-full h-full text-purple-600" />
+        <Shield className="w-full h-full text-purple-600" />
       </motion.div>
       <motion.div
         className="absolute inset-0 flex items-center justify-center"
@@ -22,7 +22,7 @@ export const Logo = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <Brain className="w-6 h-6 text-purple-800" />
+        <Sparkles className="w-5 h-5 text-purple-100" />
       </motion.div>
     </motion.div>
   );
