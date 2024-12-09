@@ -4,12 +4,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { MessageList } from "@/components/simulation/MessageList";
 import { MessageInput } from "@/components/simulation/MessageInput";
 import { SimulationControls } from "@/components/simulation/SimulationControls";
+import { SimulationHeader } from "@/components/simulation/SimulationHeader";
 import { analyzeMessage } from "@/utils/messageFilter";
+import { storeMessage } from "@/utils/messageStorage";
 import { Message } from "@/types/message";
-import { supabase } from "@/integrations/supabase/client";
 import { useSimulationStore } from "@/store/simulationStore";
 import { motion } from "framer-motion";
-import { AlertCircle, Shield } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function Simulation() {
   const [input, setInput] = useState("");
@@ -24,34 +25,6 @@ export default function Simulation() {
     reset 
   } = useSimulationStore();
 
-  const storeMessage = async (message: Message) => {
-    try {
-      console.log('Storing message in history:', message);
-      const { error } = await supabase
-        .from('message_history')
-        .insert({
-          text: message.text,
-          sender: message.sender,
-          is_hidden: message.isHidden || false,
-          timestamp: message.timestamp,
-          filter_result: message.filterResult || null
-        });
-
-      if (error) {
-        console.error('Error storing message:', error);
-        throw error;
-      }
-      console.log('Message stored successfully');
-    } catch (error) {
-      console.error('Error storing message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to store message in history.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const handleSend = async () => {
     if (!input.trim() || !isActive || isPaused) return;
 
@@ -65,7 +38,6 @@ export default function Simulation() {
       filterResult
     };
 
-    // Add message to the list immediately for better UX
     setMessages([...messages, newMessage]);
     setInput("");
 
@@ -147,21 +119,8 @@ export default function Simulation() {
             animate={{ scale: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-xl">
-                  <Shield className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r 
-                    from-purple-600 to-purple-800">
-                    Message Filter Demo
-                  </h1>
-                  <p className="text-gray-600 text-sm mt-1">
-                    Test our AI-powered content filtering system
-                  </p>
-                </div>
-              </div>
+            <div className="flex justify-between items-center">
+              <SimulationHeader />
               <SimulationControls
                 isActive={isActive}
                 isPaused={isPaused}
@@ -182,4 +141,4 @@ export default function Simulation() {
       </motion.div>
     </div>
   );
-};
+}
