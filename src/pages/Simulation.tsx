@@ -41,21 +41,22 @@ export default function Simulation() {
     setMessages([...messages, newMessage]);
     setInput("");
 
-    // Store message in history if it's harmful
-    if (filterResult.isHarmful) {
-      try {
-        const { error } = await supabase
-          .from('message_history')
-          .insert({
-            text: newMessage.text,
-            sender: newMessage.sender,
-            is_hidden: newMessage.isHidden,
-            timestamp: newMessage.timestamp,
-            filter_result: filterResult
-          });
+    try {
+      // Store ALL messages in history, not just harmful ones
+      const { error } = await supabase
+        .from('message_history')
+        .insert({
+          text: newMessage.text,
+          sender: newMessage.sender,
+          is_hidden: newMessage.isHidden,
+          timestamp: newMessage.timestamp,
+          filter_result: filterResult
+        });
 
-        if (error) throw error;
-        
+      if (error) throw error;
+      
+      // Only show toast for harmful messages
+      if (filterResult.isHarmful) {
         toast({
           title: "Message Hidden",
           description: (
@@ -69,14 +70,14 @@ export default function Simulation() {
           ),
           variant: "destructive"
         });
-      } catch (error) {
-        console.error('Error storing message:', error);
-        toast({
-          title: "Error",
-          description: "Failed to store message in history.",
-          variant: "destructive"
-        });
       }
+    } catch (error) {
+      console.error('Error storing message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to store message in history.",
+        variant: "destructive"
+      });
     }
 
     // Bot response with animation delay
@@ -169,4 +170,4 @@ export default function Simulation() {
       </motion.div>
     </div>
   );
-}
+};
