@@ -24,6 +24,34 @@ export default function Simulation() {
     reset 
   } = useSimulationStore();
 
+  const storeMessage = async (message: Message) => {
+    try {
+      console.log('Storing message in history:', message);
+      const { error } = await supabase
+        .from('message_history')
+        .insert({
+          text: message.text,
+          sender: message.sender,
+          is_hidden: message.isHidden || false,
+          timestamp: message.timestamp,
+          filter_result: message.filterResult || null
+        });
+
+      if (error) {
+        console.error('Error storing message:', error);
+        throw error;
+      }
+      console.log('Message stored successfully');
+    } catch (error) {
+      console.error('Error storing message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to store message in history.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || !isActive || isPaused) return;
 
@@ -41,47 +69,28 @@ export default function Simulation() {
     setMessages([...messages, newMessage]);
     setInput("");
 
-    try {
-      // Store ALL messages in history, not just harmful ones
-      const { error } = await supabase
-        .from('message_history')
-        .insert({
-          text: newMessage.text,
-          sender: newMessage.sender,
-          is_hidden: newMessage.isHidden,
-          timestamp: newMessage.timestamp,
-          filter_result: filterResult
-        });
+    // Store user message
+    await storeMessage(newMessage);
 
-      if (error) throw error;
-      
-      // Only show toast for harmful messages
-      if (filterResult.isHarmful) {
-        toast({
-          title: "Message Hidden",
-          description: (
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-destructive" />
-              <span>
-                Message contained {filterResult.categories.join(", ")} content 
-                with {filterResult.severity} severity.
-              </span>
-            </div>
-          ),
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error storing message:', error);
+    // Show toast only for harmful messages
+    if (filterResult.isHarmful) {
       toast({
-        title: "Error",
-        description: "Failed to store message in history.",
+        title: "Message Hidden",
+        description: (
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-destructive" />
+            <span>
+              Message contained {filterResult.categories.join(", ")} content 
+              with {filterResult.severity} severity.
+            </span>
+          </div>
+        ),
         variant: "destructive"
       });
     }
 
     // Bot response with animation delay
-    setTimeout(() => {
+    setTimeout(async () => {
       const botMessage: Message = {
         id: Date.now() + 1,
         text: filterResult.isHarmful 
@@ -91,6 +100,9 @@ export default function Simulation() {
         timestamp: new Date().toISOString()
       };
       setMessages((prevMessages: Message[]) => [...prevMessages, botMessage]);
+      
+      // Store bot response
+      await storeMessage(botMessage);
     }, 1000);
   };
 
