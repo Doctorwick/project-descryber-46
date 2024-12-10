@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, ArrowRight, Loader2 } from "lucide-react";
+import { MessageSquare, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SupportMessage } from "./SupportMessage";
 import { ResourceCard } from "./ResourceCard";
+import { useToast } from "@/components/ui/use-toast";
 
 type Message = {
   id: string;
   type: "user" | "bot";
   content: string;
   resources?: any[];
+  isUrgent?: boolean;
 };
 
 export const SupportChat = () => {
@@ -23,6 +25,7 @@ export const SupportChat = () => {
   }]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const { toast } = useToast();
 
   const { data: resources } = useQuery({
     queryKey: ["support-resources"],
@@ -38,26 +41,23 @@ export const SupportChat = () => {
     }
   });
 
-  const findRelevantResources = (input: string) => {
-    if (!resources) return [];
-    
-    const keywords = {
-      suicide: ["suicide", "kill", "die", "end", "life"],
-      bullying: ["bully", "harass", "threat", "scare", "intimidate"],
-      mental: ["anxiety", "depression", "stress", "overwhelm", "panic"],
-      communication: ["talk", "speak", "tell", "share", "express"]
-    };
+  const analyzeMessage = async (message: string) => {
+    try {
+      const response = await fetch('/functions/v1/analyze-support-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ message }),
+      });
 
-    const matches = Object.entries(keywords).reduce((acc, [category, words]) => {
-      const hasMatch = words.some(word => input.toLowerCase().includes(word));
-      if (hasMatch) {
-        const categoryResources = resources.filter(r => r.category.toLowerCase() === category);
-        acc.push(...categoryResources);
-      }
-      return acc;
-    }, [] as any[]);
-
-    return matches;
+      if (!response.ok) throw new Error('Failed to analyze message');
+      return await response.json();
+    } catch (error) {
+      console.error('Error analyzing message:', error);
+      return null;
+    }
   };
 
   const handleSend = async () => {
@@ -73,23 +73,57 @@ export const SupportChat = () => {
     setInput("");
     setIsTyping(true);
 
-    // Find relevant resources
-    const relevantResources = findRelevantResources(input);
+    try {
+      const analysis = await analyzeMessage(input);
+      
+      if (!analysis) {
+        throw new Error('Failed to analyze message');
+      }
 
-    // Simulate bot thinking
-    await new Promise(resolve => setTimeout(resolve, 1000));
+      // If urgency is high, show an immediate crisis resource
+      if (analysis.analysis.urgency === 'high') {
+        const crisisResources = resources?.filter(r => r.category === 'crisis') || [];
+        if (crisisResources.length > 0) {
+          const botUrgentMessage: Message = {
+            id: Date.now().toString() + '-urgent',
+            type: 'bot',
+            content: '⚠️ I notice you might be in crisis. Here are some immediate resources that can help:',
+            resources: crisisResources,
+            isUrgent: true
+          };
+          setMessages(prev => [...prev, botUrgentMessage]);
+        }
+      }
 
-    const botResponse: Message = {
-      id: (Date.now() + 1).toString(),
-      type: "bot",
-      content: relevantResources.length > 0
-        ? "I've found some resources that might help you:"
-        : "I understand you're going through a difficult time. While I've found some general resources that might help, please remember that there are people who want to support you. Would you like to tell me more about what you're experiencing?",
-      resources: relevantResources
-    };
+      // Add the main response with matched resources
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "bot",
+        content: analysis.analysis.response,
+        resources: analysis.resources
+      };
 
-    setMessages(prev => [...prev, botResponse]);
-    setIsTyping(false);
+      setMessages(prev => [...prev, botResponse]);
+
+      // Show toast for urgent situations
+      if (analysis.analysis.urgency === 'high') {
+        toast({
+          title: "Important Notice",
+          description: "If you're in immediate danger, please call emergency services right away.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error in chat:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        type: "bot",
+        content: "I apologize, but I'm having trouble processing your message. Please try again or reach out to emergency services if you're in crisis."
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -114,7 +148,7 @@ export const SupportChat = () => {
               className="flex items-center gap-2 text-gray-500"
             >
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Typing...</span>
+              <span>Analyzing your message...</span>
             </motion.div>
           )}
         </AnimatePresence>

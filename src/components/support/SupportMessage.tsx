@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { ResourceCard } from "./ResourceCard";
-import { Bot, User } from "lucide-react";
+import { Bot, User, AlertTriangle } from "lucide-react";
 
 interface SupportMessageProps {
   message: {
     type: "user" | "bot";
     content: string;
     resources?: any[];
+    isUrgent?: boolean;
   };
 }
 
@@ -23,10 +24,14 @@ export const SupportMessage = ({ message }: SupportMessageProps) => {
         <div className={`p-2 rounded-full ${
           message.type === "user"
             ? "bg-purple-100"
+            : message.isUrgent
+            ? "bg-red-100"
             : "bg-gray-100"
         }`}>
           {message.type === "user" ? (
             <User className="w-4 h-4 text-purple-600" />
+          ) : message.isUrgent ? (
+            <AlertTriangle className="w-4 h-4 text-red-600" />
           ) : (
             <Bot className="w-4 h-4 text-gray-600" />
           )}
@@ -35,6 +40,8 @@ export const SupportMessage = ({ message }: SupportMessageProps) => {
           className={`p-4 rounded-xl ${
             message.type === "user"
               ? "bg-purple-600 text-white"
+              : message.isUrgent
+              ? "bg-red-50 border border-red-200"
               : "bg-white border border-gray-200"
           }`}
         >
