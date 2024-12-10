@@ -3,11 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "./Logo";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -29,25 +31,6 @@ export function Navbar() {
     { path: "/support", label: "Support" },
   ];
 
-  const menuVariants = {
-    closed: {
-      opacity: 0,
-      height: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
-    },
-    open: {
-      opacity: 1,
-      height: "auto",
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
-    }
-  };
-
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
       isScrolled ? "bg-white/90 shadow-lg backdrop-blur-md" : "bg-transparent"
@@ -57,7 +40,7 @@ export function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center group">
               <Logo />
-              <span className="ml-2 text-xl font-semibold bg-gradient-to-r from-purple-600 to-purple-800 
+              <span className="ml-2 text-lg sm:text-xl font-semibold bg-gradient-to-r from-purple-600 to-purple-800 
                 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:to-purple-900 
                 transition-all duration-300">
                 Descryber
@@ -71,7 +54,7 @@ export function Navbar() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 
                   ${location.pathname === link.path 
                     ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg" 
                     : "text-gray-600 hover:bg-purple-50 hover:text-purple-600"
@@ -109,10 +92,10 @@ export function Navbar() {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial="closed"
-            animate="open"
-            exit="closed"
-            variants={menuVariants}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
             className="md:hidden overflow-hidden"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/80 backdrop-blur-md shadow-lg">

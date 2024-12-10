@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MessageListProps {
   messages: Message[];
@@ -15,6 +16,7 @@ interface MessageListProps {
 export const MessageList = ({ messages }: MessageListProps) => {
   const [expandedMessage, setExpandedMessage] = useState<number | null>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleFeedback = (messageId: number, isPositive: boolean) => {
     toast({
@@ -25,7 +27,7 @@ export const MessageList = ({ messages }: MessageListProps) => {
   };
 
   return (
-    <ScrollArea className="h-[600px] pr-4">
+    <ScrollArea className="h-[calc(100vh-20rem)] sm:h-[600px] pr-4">
       <div className="space-y-4 mb-4">
         <AnimatePresence mode="popLayout">
           {messages.map(message => (
@@ -46,31 +48,31 @@ export const MessageList = ({ messages }: MessageListProps) => {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className={cn(
-                  "max-w-[80%] rounded-2xl shadow-lg backdrop-blur-sm",
+                  "max-w-[90%] sm:max-w-[80%] rounded-2xl shadow-lg backdrop-blur-sm",
                   message.sender === "user"
                     ? "bg-gradient-to-br from-purple-600 to-purple-700 text-white"
                     : "bg-white/90 border border-purple-100 text-gray-800"
                 )}
               >
-                <div className="p-4 space-y-3">
-                  <div className="flex items-start gap-3">
+                <div className="p-3 sm:p-4 space-y-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     <div className={cn(
-                      "p-2 rounded-full",
+                      "p-1.5 sm:p-2 rounded-full",
                       message.sender === "user" 
                         ? "bg-purple-500/20" 
                         : "bg-purple-100"
                     )}>
                       {message.sender === "user" ? (
-                        <User className="w-4 h-4 text-white" />
+                        <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                       ) : (
-                        <Bot className="w-4 h-4 text-purple-600" />
+                        <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                       )}
                     </div>
                     
                     {message.isHidden ? (
                       <div className="flex items-center gap-2 text-gray-400">
                         <AlertTriangle className="w-4 h-4" />
-                        <span className="italic">Message hidden due to harmful content</span>
+                        <span className="italic text-sm">Message hidden due to harmful content</span>
                       </div>
                     ) : (
                       <div className="flex-1 space-y-2">
@@ -161,7 +163,7 @@ export const MessageList = ({ messages }: MessageListProps) => {
                     expandedMessage === message.id ? null : message.id
                   )}
                   className={cn(
-                    "w-full rounded-none border-t",
+                    "w-full rounded-none border-t text-xs sm:text-sm",
                     message.sender === "user"
                       ? "border-purple-500/20 text-white hover:bg-purple-500/20"
                       : "border-purple-100 hover:bg-purple-50"
