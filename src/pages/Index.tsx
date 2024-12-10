@@ -6,29 +6,29 @@ import { motion } from "framer-motion";
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 overflow-hidden">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="container mx-auto px-4 pt-24 pb-16 text-center relative overflow-hidden">
+      <section className="container mx-auto px-4 pt-24 pb-16 text-center relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(155,135,245,0.1),transparent_50%)]" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8 }}
           className="relative"
         >
-          <h1 className="mb-6 text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+          <h1 className="mb-6 text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
             Welcome to Descryber
           </h1>
-          <p className="mb-8 text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mb-8 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Your trusted guardian against cyberbullying, providing safety and support 
             across social media platforms with advanced AI protection.
           </p>
           <Link to="/simulation">
             <Button 
               className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 
-                text-white px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
+                text-white px-6 sm:px-8 py-4 sm:py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
                 group relative overflow-hidden"
             >
               <span className="relative z-10">Try Demo</span>
@@ -42,10 +42,16 @@ export default function Index() {
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-purple-600 to-purple-800 
-          bg-clip-text text-transparent">
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-purple-600 to-purple-800 
+            bg-clip-text text-transparent"
+        >
           How Descryber Protects You
-        </h2>
+        </motion.h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <FeatureCard
             icon={<Shield className="w-8 h-8 text-purple-600" />}
@@ -110,7 +116,7 @@ export default function Index() {
       </section>
 
       {/* Availability Section */}
-      <section className="container mx-auto px-4 py-20 text-center relative overflow-hidden">
+      <section className="container mx-auto px-4 py-20 text-center relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(155,135,245,0.1),transparent_50%)]" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -145,8 +151,9 @@ function FeatureCard({ icon, title, description, delay }: {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
       viewport={{ once: true }}
+      whileHover={{ y: -5 }}
       className="p-6 bg-white/80 backdrop-blur-md rounded-xl shadow-lg hover:shadow-xl transition-all 
-        duration-300 hover:-translate-y-1 border border-purple-100 group"
+        duration-300 border border-purple-100 group"
     >
       <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">{icon}</div>
       <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-purple-600 to-purple-800 

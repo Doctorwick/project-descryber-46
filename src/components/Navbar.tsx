@@ -29,6 +29,25 @@ export function Navbar() {
     { path: "/support", label: "Support" },
   ];
 
+  const menuVariants = {
+    closed: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut"
+      }
+    },
+    open: {
+      opacity: 1,
+      height: "auto",
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut"
+      }
+    }
+  };
+
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
       isScrolled ? "bg-white/90 shadow-lg backdrop-blur-md" : "bg-transparent"
@@ -67,14 +86,20 @@ export function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               type="button"
-              className="text-gray-600 hover:text-purple-600 p-2 rounded-md"
+              className="text-gray-600 hover:text-purple-600 p-2 rounded-md transition-colors duration-200"
               onClick={toggleMenu}
             >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+              <motion.div
+                initial={false}
+                animate={{ rotate: isMenuOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </motion.div>
             </button>
           </div>
         </div>
@@ -84,11 +109,11 @@ export function Navbar() {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden"
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={menuVariants}
+            className="md:hidden overflow-hidden"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/80 backdrop-blur-md shadow-lg">
               {navLinks.map((link) => (
@@ -111,4 +136,4 @@ export function Navbar() {
       </AnimatePresence>
     </nav>
   );
-};
+}
