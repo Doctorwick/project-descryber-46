@@ -43,20 +43,15 @@ export const SupportChat = () => {
 
   const analyzeMessage = async (message: string) => {
     try {
-      const response = await fetch('/functions/v1/analyze-support-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ message }),
+      const response = await supabase.functions.invoke('analyze-support-message', {
+        body: { message }
       });
 
-      if (!response.ok) throw new Error('Failed to analyze message');
-      return await response.json();
+      if (response.error) throw new Error(response.error.message);
+      return response.data;
     } catch (error) {
       console.error('Error analyzing message:', error);
-      return null;
+      throw error;
     }
   };
 
@@ -74,15 +69,18 @@ export const SupportChat = () => {
     setIsTyping(true);
 
     try {
-      const analysis = await analyzeMessage(input);
+      const result = await analyzeMessage(input);
+      console.log('Analysis result:', result);
       
-      if (!analysis) {
+      if (!result) {
         throw new Error('Failed to analyze message');
       }
 
+      const { analysis, resources: matchedResources } = result;
+
       // If urgency is high, show an immediate crisis resource
-      if (analysis.analysis.urgency === 'high') {
-        const crisisResources = resources?.filter(r => r.category === 'crisis') || [];
+      if (analysis.urgency === 'high') {
+        const crisisResources = matchedResources?.filter(r => r.category === 'crisis') || [];
         if (crisisResources.length > 0) {
           const botUrgentMessage: Message = {
             id: Date.now().toString() + '-urgent',
@@ -99,14 +97,14 @@ export const SupportChat = () => {
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: "bot",
-        content: analysis.analysis.response,
-        resources: analysis.resources
+        content: analysis.response,
+        resources: matchedResources
       };
 
       setMessages(prev => [...prev, botResponse]);
 
       // Show toast for urgent situations
-      if (analysis.analysis.urgency === 'high') {
+      if (analysis.urgency === 'high') {
         toast({
           title: "Important Notice",
           description: "If you're in immediate danger, please call emergency services right away.",
