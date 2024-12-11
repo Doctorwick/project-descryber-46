@@ -1,7 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,31 +34,27 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a compassionate mental health first responder. Your role is to:
-              1. Analyze the user's message for signs of crisis or distress
-              2. Determine the urgency level
-              3. Provide a warm, supportive response
-              4. Suggest appropriate resource categories
-              
-              Respond in JSON format:
+            content: `You are a compassionate mental health first responder. Analyze the user's message and respond in JSON format with:
               {
-                "topics": string[],
-                "urgency": "low" | "medium" | "high",
-                "response": string,
-                "resourceCategories": string[]
+                "topics": string[], // Key themes identified in the message
+                "urgency": "low" | "medium" | "high", // Assess risk level
+                "response": string, // Warm, supportive response (max 200 chars)
+                "resourceCategories": string[] // Relevant resource types: "crisis", "mental", "communication"
               }
               
               Guidelines:
-              - For mentions of self-harm or suicide, set urgency to "high" and include "crisis" category
-              - For depression or anxiety, include "mental" category
-              - For relationship/communication issues, include "communication" category
+              - Set urgency "high" for self-harm/suicide mentions
+              - Include "crisis" category for high urgency
               - Keep responses warm and supportive
-              - Always acknowledge their feelings
-              - For high urgency, emphasize immediate professional help
-              - Maximum response length: 200 characters`
+              - Acknowledge feelings
+              - For high urgency, emphasize immediate help
+              - For depression/anxiety, include "mental" category
+              - For relationship/social issues, include "communication" category`
           },
           { role: 'user', content: message }
         ],
+        temperature: 0.7,
+        max_tokens: 500
       }),
     });
 
@@ -65,7 +66,7 @@ serve(async (req) => {
     const analysis = JSON.parse(analysisData.choices[0].message.content);
     console.log('AI Analysis:', analysis);
 
-    // Fetch relevant resources
+    // Fetch relevant resources based on categories
     const { data: resources, error: dbError } = await supabase
       .from('support_resources')
       .select('*')
@@ -75,7 +76,16 @@ serve(async (req) => {
 
     if (dbError) throw dbError;
 
-    console.log('Found resources:', resources);
+    // For high urgency, prioritize crisis resources
+    if (analysis.urgency === 'high') {
+      const crisisResources = resources?.filter(r => r.category === 'crisis') || [];
+      const otherResources = resources?.filter(r => r.category !== 'crisis') || [];
+      resources?.sort((a, b) => {
+        if (a.category === 'crisis') return -1;
+        if (b.category === 'crisis') return 1;
+        return 0;
+      });
+    }
 
     return new Response(
       JSON.stringify({
@@ -91,13 +101,15 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in analyze-support-message:', error);
+    
+    // Provide a more helpful fallback response for errors
     return new Response(
       JSON.stringify({ 
         analysis: {
-          topics: ['error'],
+          topics: ['support needed'],
           urgency: 'medium',
-          response: "I'm having trouble understanding right now, but I want to help. If you're in immediate crisis, please reach out to emergency services or a crisis hotline right away.",
-          resourceCategories: ['crisis']
+          response: "I hear that you're going through a difficult time. While I'm having some technical issues, I want to make sure you get the support you need. Would you like to tell me more?",
+          resourceCategories: ['crisis', 'mental']
         },
         resources: []
       }),
