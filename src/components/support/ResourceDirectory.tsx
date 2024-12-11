@@ -54,41 +54,45 @@ export const ResourceDirectory = () => {
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <div className="glass p-6 rounded-lg mb-8 space-y-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
             type="text"
-            placeholder="Search resources..."
+            placeholder="Search by name or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-12 text-lg border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-full text-sm ${
-              !selectedCategory
-                ? "bg-purple-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            All
-          </button>
-          {categories.map((category) => (
+
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Categories</h3>
+          <div className="flex gap-2 flex-wrap">
             <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm capitalize ${
-                selectedCategory === category
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              onClick={() => setSelectedCategory(null)}
+              className={`px-4 py-2 rounded-full text-sm transition-all ${
+                !selectedCategory
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
             >
-              {category}
+              All Resources
             </button>
-          ))}
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm capitalize transition-all ${
+                  selectedCategory === category
+                    ? "bg-purple-600 text-white shadow-md"
+                    : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {category.replace("-", " ")}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
