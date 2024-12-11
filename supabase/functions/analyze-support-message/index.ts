@@ -1,17 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-const supabase = createClient(supabaseUrl!, supabaseKey!);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -22,7 +17,7 @@ serve(async (req) => {
     const { message } = await req.json();
     console.log('Analyzing message:', message);
 
-    // 1. Analyze message with GPT-4
+    // Analyze message with GPT-4
     const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -34,13 +29,13 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a supportive AI assistant analyzing user messages to determine:
-              1. The main topics/concerns (e.g., anxiety, depression, crisis)
-              2. The urgency level (low, medium, high)
-              3. A compassionate response
-              4. Relevant resource categories that might help
+            content: `You are a compassionate mental health first responder. Your role is to:
+              1. Analyze the user's message for signs of crisis or distress
+              2. Determine the urgency level
+              3. Provide a warm, supportive response
+              4. Suggest appropriate resource categories
               
-              Respond in JSON format with these fields:
+              Respond in JSON format:
               {
                 "topics": string[],
                 "urgency": "low" | "medium" | "high",
@@ -48,35 +43,44 @@ serve(async (req) => {
                 "resourceCategories": string[]
               }
               
-              For high urgency situations (mentions of self-harm, suicide, immediate danger),
-              always include "crisis" in resourceCategories and set urgency to "high".
-              
-              Keep responses warm and supportive, acknowledging the person's feelings
-              while encouraging them to seek appropriate help.`
+              Guidelines:
+              - For mentions of self-harm or suicide, set urgency to "high" and include "crisis" category
+              - For depression or anxiety, include "mental" category
+              - For relationship/communication issues, include "communication" category
+              - Keep responses warm and supportive
+              - Always acknowledge their feelings
+              - For high urgency, emphasize immediate professional help
+              - Maximum response length: 200 characters`
           },
           { role: 'user', content: message }
         ],
       }),
     });
 
+    if (!analysisResponse.ok) {
+      throw new Error('Failed to analyze message with AI');
+    }
+
     const analysisData = await analysisResponse.json();
     const analysis = JSON.parse(analysisData.choices[0].message.content);
     console.log('AI Analysis:', analysis);
 
-    // 2. Fetch relevant resources based on categories
-    const { data: resources } = await supabase
+    // Fetch relevant resources
+    const { data: resources, error: dbError } = await supabase
       .from('support_resources')
       .select('*')
-      .filter('category', 'in', `(${analysis.resourceCategories.map(c => `'${c}'`).join(',')})`)
-      .filter('active', 'eq', true)
+      .in('category', analysis.resourceCategories)
+      .eq('active', true)
       .order('priority', { ascending: false });
+
+    if (dbError) throw dbError;
 
     console.log('Found resources:', resources);
 
     return new Response(
       JSON.stringify({
         analysis,
-        resources
+        resources: resources || []
       }),
       { 
         headers: { 
@@ -89,11 +93,15 @@ serve(async (req) => {
     console.error('Error in analyze-support-message:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to analyze message',
-        details: error.message 
+        analysis: {
+          topics: ['error'],
+          urgency: 'medium',
+          response: "I'm having trouble understanding right now, but I want to help. If you're in immediate crisis, please reach out to emergency services or a crisis hotline right away.",
+          resourceCategories: ['crisis']
+        },
+        resources: []
       }),
       { 
-        status: 500,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'

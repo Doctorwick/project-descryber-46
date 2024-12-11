@@ -27,34 +27,6 @@ export const SupportChat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
 
-  const { data: resources } = useQuery({
-    queryKey: ["support-resources"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("support_resources")
-        .select("*")
-        .eq("active", true)
-        .order("priority", { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const analyzeMessage = async (message: string) => {
-    try {
-      const response = await supabase.functions.invoke('analyze-support-message', {
-        body: { message }
-      });
-
-      if (response.error) throw new Error(response.error.message);
-      return response.data;
-    } catch (error) {
-      console.error('Error analyzing message:', error);
-      throw error;
-    }
-  };
-
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -69,28 +41,36 @@ export const SupportChat = () => {
     setIsTyping(true);
 
     try {
-      const result = await analyzeMessage(input);
-      console.log('Analysis result:', result);
-      
-      if (!result) {
-        throw new Error('Failed to analyze message');
-      }
+      const response = await supabase.functions.invoke('analyze-support-message', {
+        body: { message: input }
+      });
 
-      const { analysis, resources: matchedResources } = result;
+      if (response.error) throw new Error(response.error.message);
+      
+      const { analysis, resources } = response.data;
+      console.log('Analysis result:', analysis);
 
       // If urgency is high, show an immediate crisis resource
       if (analysis.urgency === 'high') {
-        const crisisResources = matchedResources?.filter(r => r.category === 'crisis') || [];
+        const crisisResources = resources?.filter(r => r.category === 'crisis') || [];
         if (crisisResources.length > 0) {
           const botUrgentMessage: Message = {
             id: Date.now().toString() + '-urgent',
             type: 'bot',
-            content: '⚠️ I notice you might be in crisis. Here are some immediate resources that can help:',
+            content: '⚠️ I hear you, and I want you to know that your life matters. Help is available right now:',
             resources: crisisResources,
             isUrgent: true
           };
           setMessages(prev => [...prev, botUrgentMessage]);
         }
+
+        // Show toast for urgent situations
+        toast({
+          title: "Important",
+          description: "If you're having thoughts of suicide, please reach out to emergency services or a crisis hotline immediately. You're not alone.",
+          variant: "destructive",
+          duration: 10000,
+        });
       }
 
       // Add the main response with matched resources
@@ -98,25 +78,16 @@ export const SupportChat = () => {
         id: (Date.now() + 1).toString(),
         type: "bot",
         content: analysis.response,
-        resources: matchedResources
+        resources: resources
       };
 
       setMessages(prev => [...prev, botResponse]);
-
-      // Show toast for urgent situations
-      if (analysis.urgency === 'high') {
-        toast({
-          title: "Important Notice",
-          description: "If you're in immediate danger, please call emergency services right away.",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       console.error('Error in chat:', error);
       const errorMessage: Message = {
         id: Date.now().toString(),
         type: "bot",
-        content: "I apologize, but I'm having trouble processing your message. Please try again or reach out to emergency services if you're in crisis."
+        content: "I'm having trouble right now, but I want to help. If you're in immediate crisis, please reach out to emergency services or a crisis hotline right away."
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
